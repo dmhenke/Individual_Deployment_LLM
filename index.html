@@ -146,6 +146,28 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    display: flex;
+    align-items: center;
+  }
+
+  .home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 1rem 2rem 1rem 0;
+    margin-right: 2rem;
+    border-right: 1px solid var(--rule);
+    transition: color 0.2s;
+  }
+
+  .home-link:hover {
+    color: var(--accent-mid);
   }
 
   .toc-inner {
@@ -602,9 +624,10 @@
 
 <!-- Sticky TOC -->
 <nav class="toc-bar no-print">
+  <a href="index.html" class="home-link">← Home</a>
   <div class="toc-inner">
     <a href="#context" class="toc-link">Context</a>
-
+    <a href="#platforms" class="toc-link">Platforms</a>
     <a href="#hardware" class="toc-link">Hardware</a>
     <a href="#models-24" class="toc-link">24 GB tier</a>
     <a href="#models-16" class="toc-link">16 GB tier</a>
@@ -612,6 +635,8 @@
     <a href="#benchmarks" class="toc-link">Benchmarks</a>
     <a href="#excluded" class="toc-link">Excluded</a>
     <a href="#guidance" class="toc-link">Guidance</a>
+    <a href="#hardware-builds" class="toc-link">Hardware builds</a>
+    <a href="#build-comparison" class="toc-link">Build comparison</a>
   </div>
 </nav>
 
@@ -1027,6 +1052,152 @@
     <div class="callout-label">Summary recommendation</div>
     <p>For a clinician-researcher with a private practice: an RTX 4090 workstation running DeepSeek R1 32B and Qwen3 32B via Ollama provides the optimal balance of capability, privacy, and individual deployability as of March 2026. Total hardware investment is approximately $2,000–$2,500 for the GPU plus a mid-range workstation. All patient and research data remains local. No subscription costs. No rate limits.</p>
   </div>
+</section>
+
+<!-- Section 10: Hardware Build Examples -->
+<section class="section" id="hardware-builds">
+  <div class="section-eyebrow">10 &mdash; Practical examples</div>
+  <h2>Reference hardware builds for DeepSeek R1 32B</h2>
+  
+  <h3>The research workstation (premium)</h3>
+  <p><strong>Primary GPU:</strong> NVIDIA RTX 4090 24 GB | <strong>CPU:</strong> Intel i9-14900K or AMD Ryzen 9 9950X | <strong>System RAM:</strong> 64–128 GB DDR5 | <strong>Storage:</strong> 2 TB NVMe SSD | <strong>Power:</strong> 1200W 80+ Gold PSU</p>
+  <p>This configuration allows you to run DeepSeek R1 32B at full Q4 quantization (approximately 20 GB VRAM) with headroom for system processes and browser instances. The CPU is fast enough to handle tokenization without GPU blocking. Estimated total cost: $3,500–$4,200.</p>
+  
+  <h3>The budget workstation (solid)</h3>
+  <p><strong>Primary GPU:</strong> NVIDIA RTX 4080 Super 16 GB | <strong>CPU:</strong> Intel i7-14700 or AMD Ryzen 7 7700 | <strong>System RAM:</strong> 32 GB DDR5 | <strong>Storage:</strong> 1 TB NVMe SSD | <strong>Power:</strong> 850W 80+ Gold PSU</p>
+  <p>DeepSeek R1 32B will run at Q4 quantization with approximately 1–2 GB of margin. This is the minimum recommended tier for comfortable deployment. At lower quantization levels (Q3), you gain margin for simultaneous workloads, but sacrifice reasoning quality. Estimated total cost: $2,200–$2,800.</p>
+
+  <h3>The Mac alternative (unified memory)</h3>
+  <p><strong>System:</strong> Apple MacBook Pro M4 Max 128 GB | <strong>Accelerator:</strong> Metal (native, no GPU purchase required) | <strong>Storage:</strong> 1 TB SSD</p>
+  <p>The M4 Max's unified memory architecture eliminates the traditional VRAM bottleneck. DeepSeek R1 32B loads entirely into the memory pool and runs at native FP16 precision — a quality tier higher than Q4 quantization on NVIDIA cards with the same inference speed. The 128 GB variant is overkill for a single 32B model, but provides headroom for RAG systems and multi-model workflows. Estimated cost: $6,500 (laptop); favorable for clinicians who need portability.</p>
+
+  <h3>Installation &amp; usage</h3>
+  <p>All three configurations deploy identically via Ollama:</p>
+  <div class="platform-note">
+    <span class="platform-icon">INSTALLATION</span>
+    <p><code>curl -fsSL https://ollama.ai/install.sh | sh</code><br/>
+    <code>ollama pull deepseek-r1:32b</code></p>
+  </div>
+  <p>Once the model is pulled, interact with it via a CLI chat interface, integrate it into your application via the HTTP API (<code>localhost:11434</code>), or use third-party UI tools like Open WebUI or Lollms.</p>
+
+  <h3>Performance expectations</h3>
+  <p><strong>Tokens per second:</strong> 40–80 tokens/s on a 4090; 25–45 tokens/s on a 4080 Super; 50–90 tokens/s on M4 Max (metal acceleration). <strong>Context window:</strong> 128K tokens (standard for DeepSeek R1 32B). <strong>Cost per query:</strong> $0.00 (all local; your electricity cost only).</p>
+</section>
+
+<!-- Section 11: Detailed Build Comparison -->
+<section class="section" id="build-comparison">
+  <div class="section-eyebrow">11 &mdash; Build cost analysis</div>
+  <h2>DeepSeek R1 32B deployment: Three build paths compared</h2>
+  <p>This section provides a detailed cost breakdown and capability comparison for three distinct approaches to deploying DeepSeek R1 32B locally: two custom self-builds optimized for cost and capability, and one pre-built system offering convenience at a premium. All pricing verified March 18, 2026.</p>
+
+  <h3>The builds at a glance</h3>
+  
+  <div style="margin:2rem 0;padding:1.5rem;background:var(--accent-light);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;">
+    <p style="margin:0;font-size:.9rem;">⚠ <strong>Price correction — DDR5 RAM crisis:</strong> DDR5 RAM prices have surged over 400% since mid-2025 due to an AI-driven NAND supply shortage. A 64 GB DDR5-6000 kit that cost ~$200 in mid-2025 now runs $750–$900. All totals reflect verified March 2026 pricing. Earlier cost estimates significantly understated RAM costs.</p>
+  </div>
+
+  <h3>Build A: Single GPU workstation (most economical)</h3>
+  <p><strong>GPU:</strong> 1× RTX 3090 24 GB (used) · <strong>CPU:</strong> Ryzen 7 7700X · <strong>RAM:</strong> 64 GB DDR5-6000 · <strong>Total cost:</strong> ~$2,515–$2,865</p>
+  <p>This is the lowest-cost entry point for DeepSeek R1 32B deployment. A single used RTX 3090 provides 24 GB VRAM, sufficient for Q4 quantization of the 32B model. The platform (AM5 + DDR5) allows future GPU upgrades without CPU/mobo replacement. Expected token throughput: 18–28 tokens/second.</p>
+  <ul style="margin:1rem 0 2rem 2rem;color:var(--ink-2);">
+    <li>✓ Best VRAM-per-dollar efficiency (~$38–$42 / GB)</li>
+    <li>✓ Comfortable performance for single-user clinical/research work</li>
+    <li>✓ Future upgrade path: swap GPU for RTX 4090 or newer without platform change</li>
+    <li>✗ Used GPU carries no warranty; requires careful vetting</li>
+    <li>✗ Cannot run 70B-class models (insufficient VRAM)</li>
+    <li>✗ Self-assembly required; moderate technical complexity</li>
+  </ul>
+
+  <h3>Build B: Dual GPU workstation (best capability per dollar)</h3>
+  <p><strong>GPU:</strong> 2× RTX 3090 24 GB (used) with NVLink bridge · <strong>CPU:</strong> Ryzen 7 7700X · <strong>RAM:</strong> 64 GB DDR5-6000 · <strong>Total cost:</strong> ~$3,455–$4,025</p>
+  <p>For ~$800–$1,100 more than Build A, you acquire 48 GB total VRAM (NVLink-connected), enabling deployment of 70B-parameter models at Q4 quantization and full-precision inference on 32B models. This is the strongest choice for researchers who anticipate experimentation beyond R1 32B. Expected token throughput: 25–38 tokens/second.</p>
+  <ul style="margin:1rem 0 2rem 2rem;color:var(--ink-2);">
+    <li>✓ 48 GB VRAM pool supports 70B models and full-precision 32B inference</li>
+    <li>✓ Comparable VRAM-per-dollar to Build A (~$36–$42 / GB)</li>
+    <li>✓ Faster inference than Build A (25–38 vs. 18–28 tok/s)</li>
+    <li>✗ Higher sourcing risk: two used GPUs to vet from different sellers</li>
+    <li>✗ Complex assembly: NVLink bridge configuration, larger PSU/case required</li>
+    <li>✗ No warranty on either card</li>
+  </ul>
+
+  <h3>Build C: Alienware Area-51 prebuilt (convenience and warranty)</h3>
+  <p><strong>GPU:</strong> RTX 5090 32 GB GDDR7 (new) · <strong>CPU:</strong> Intel Core Ultra 9 285K (24-core) · <strong>RAM:</strong> Stock 32 GB + ~$300 aftermarket upgrade to 64 GB · <strong>Total cost:</strong> ~$5,299 (including RAM upgrade)</p>
+  <p>The RTX 5090 is a generation ahead (Blackwell architecture, 2025) and delivers approximately 2× the token throughput of either 3090-based build. This is currently the only practical retail avenue to acquire an RTX 5090 near MSRP. The prebuilt premium over Build A is now approximately $2,400–$2,800 when RAM costs are accurately accounted for. Expected token throughput: 45–65 tokens/second.</p>
+  <ul style="margin:1rem 0 2rem 2rem;color:var(--ink-2);">
+    <li>✓ Newest GPU architecture; 2× faster inference than Build A</li>
+    <li>✓ RTX 5090 access: currently unavailable in retail; prebuilt is the only avenue</li>
+    <li>✓ Full 1-year system warranty from Dell; zero assembly required</li>
+    <li>✓ Stock DDR5 is cheaper to upgrade than buying custom</li>
+    <li>✗ Highest total cost (~$2,400 premium over Build A)</li>
+    <li>✗ Poor VRAM-per-dollar ratio (~$166 / GB vs. ~$38–$42 for custom builds)</li>
+  </ul>
+
+  <h3>Cost breakdown comparison</h3>
+  
+  <table style="width:100%;border-collapse:collapse;margin:2rem 0;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <th style="text-align:left;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Component</th>
+        <th style="text-align:right;padding:0.75rem;color:var(--accent);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build A</th>
+        <th style="text-align:right;padding:0.75rem;color:var(--accent-mid);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build B</th>
+        <th style="text-align:right;padding:0.75rem;color:var(--amber);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build C</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);">GPU(s)</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">$800–$1,000</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">$1,600–$2,000</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$3,500 (included)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);">CPU + Motherboard</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$415</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$510</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">included</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);">64 GB DDR5 RAM <span style="color:var(--amber);font-size:.75rem;">▲ CRISIS</span></td>
+        <td style="text-align:right;padding:0.75rem;color:var(--amber);font-weight:500;">$750–$900</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--amber);font-weight:500;">$750–$900</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$300 (upgrade)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);">Storage + PSU + Case + Cooler</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$550</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$715</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">included</td>
+      </tr>
+      <tr style="background:var(--accent-light);border:1px solid var(--accent);">
+        <td style="padding:0.75rem;font-weight:600;color:var(--ink);">Total (verified Mar 2026)</td>
+        <td style="text-align:right;padding:0.75rem;font-weight:600;color:var(--accent);">~$2,515–$2,865</td>
+        <td style="text-align:right;padding:0.75rem;font-weight:600;color:var(--accent-mid);">~$3,455–$4,025</td>
+        <td style="text-align:right;padding:0.75rem;font-weight:600;color:var(--amber);">$5,299</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Where to source components</h3>
+  
+  <p><strong>GPU (used RTX 3090):</strong> eBay ($800–$1,000 with verified seller ratings), Reddit r/hardwareswap ($750–$950, trader flair), or Facebook Marketplace ($700–$900 with local pickup inspection).</p>
+  
+  <p><strong>CPU (Ryzen 7 7700X):</strong> Micro Center ($229.99, in-store), Amazon ($245–$265, watch for price dips via CamelCamelCamel alerts), or Newegg (especially CPU + motherboard bundles, which often discount by $30–$60).</p>
+  
+  <p><strong>RAM (64 GB DDR5-6000):</strong> <strong>Volatile pricing — verify immediately before purchase.</strong> Amazon ($750–$850, set price alerts) or Newegg bundle deals (often $100–$200 cheaper when bundled with CPU/mobo). G.Skill Flare X5 and Crucial Pro are the most commonly competitive models.</p>
+  
+  <p><strong>Storage/PSU/Case/Cooler:</strong> Amazon for most components; Newegg occasionally offers 5–10% bundle discounts. WD Black SN850X 2 TB NVMe runs ~$200; Corsair RM1000x PSU ~$155; Fractal Define R5 case ~$120; be quiet! Dark Rock 4 cooler ~$75.</p>
+  
+  <p><strong>NVLink bridge (Build B only):</strong> eBay, search "NVIDIA NVLink 3-slot RTX 3090" (~$60–$90). Verify slot pitch and cooler clearance compatibility with your cards before ordering.</p>
+  
+  <p><strong>Alienware Area-51 (Build C):</strong> Dell.com or Alienware.com ($4,999 direct). Purchase the RTX 5090 system directly from Dell for warranty. Buy a separate 2×32 GB DDR5-5600 kit on Amazon (~$300) rather than through Dell's configure-to-order (which typically overcharges 40–60% for memory upgrades).</p>
+
+  <h3>Final recommendation</h3>
+  
+  <div class="callout">
+    <div class="callout-label">Which build?</div>
+    <p><strong>Build A</strong> if your budget is fixed and R1 32B is sufficient for your use case. <strong>Build B</strong> if you anticipate evaluating 70B-class models or want full-precision FP16 inference (which provides slightly higher quality than Q4 quantization). <strong>Build C</strong> if you need the fastest possible inference and cannot absorb setup time or hardware sourcing risk — and if you value a warranty on the entire system.</p>
+  </div>
+
 </section>
 
 </div><!-- /container -->
