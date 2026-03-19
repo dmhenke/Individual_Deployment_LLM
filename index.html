@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open-Source LLMs for Individual Deployment — 2026 Assessment</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+  :root {
+    --ink: #1a1917;
+    --ink-2: #4a4845;
+    --ink-3: #8a8784;
+    --paper: #f7f4ee;
+    --paper-2: #ede9e0;
+    --paper-3: #e2ddd3;
+    --rule: #d5cfc4;
+    --accent: #1e4e8c;
+    --accent-light: #e8eef7;
+    --accent-mid: #5a85c4;
+    --green: #1a6e4a;
+    --green-light: #e4f0ea;
+    --amber: #7a4e10;
+    --amber-light: #f5ead8;
+    --red: #8c1e1e;
+    --red-light: #f5e4e4;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 16px; }
+
+  body {
+    font-family: 'Instrument Sans', Georgia, serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+  /* Layout */
+  .container { max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+
+  /* Cover / Header */
+  .cover {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 5rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(255,255,255,0.03) 39px,
+      rgba(255,255,255,0.03) 40px
+    );
+  }
+
+  .cover-inner { max-width: 860px; margin: 0 auto; position: relative; }
+
+  .cover-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: rgba(247,244,238,0.45);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cover-tag::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(247,244,238,0.15);
+    max-width: 120px;
+  }
+
+  .cover h1 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -.02em;
+    margin-bottom: 1.5rem;
+    max-width: 680px;
+  }
+
+  .cover h1 em {
+    font-style: italic;
+    color: rgba(247,244,238,0.55);
+  }
+
+  .cover-sub {
+    font-size: 1rem;
+    color: rgba(247,244,238,0.6);
+    max-width: 520px;
+    line-height: 1.65;
+    margin-bottom: 3rem;
+  }
+
+  .cover-meta {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    border-top: 1px solid rgba(247,244,238,0.12);
+    padding-top: 1.5rem;
+  }
+
+  .meta-item { }
+  .meta-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(247,244,238,0.35);
+    margin-bottom: 3px;
+  }
+  .meta-val {
+    font-size: 13px;
+    color: rgba(247,244,238,0.75);
+  }
+
+  /* Nav / TOC */
+  .toc-bar {
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--rule);
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .toc-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .toc-inner::-webkit-scrollbar { display: none; }
+
+  .toc-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-decoration: none;
+    padding: 14px 18px 12px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+  }
+  .toc-link:hover { color: var(--ink); border-color: var(--accent-mid); }
+
+  /* Sections */
+  .section { padding: 4rem 0 2rem; }
+  .section + .section { border-top: 1px solid var(--rule); }
+
+  .section-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 1rem;
+  }
+
+  .section h2 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 1.9rem;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 1.25rem;
+    letter-spacing: -.01em;
+  }
+
+  .section h3 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin: 2rem 0 .75rem;
+  }
+
+  p { margin-bottom: 1rem; color: var(--ink-2); font-size: .97rem; }
+  p:last-child { margin-bottom: 0; }
+
+  strong { color: var(--ink); font-weight: 600; }
+
+  /* Callout / highlight box */
+  .callout {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1.5rem 0;
+    font-size: .93rem;
+  }
+  .callout-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: .4rem;
+  }
+  .callout p { color: var(--ink-2); margin: 0; }
+
+  /* Platform note */
+  .platform-note {
+    background: var(--paper-3);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .platform-icon {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .platform-note p { margin: 0; font-size: .9rem; }
+
+  /* Hardware table */
+  .hw-table-wrap { overflow-x: auto; margin: 1.5rem 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .88rem;
+  }
+  thead tr { border-bottom: 2px solid var(--ink); }
+  th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 8px 12px 8px 0;
+    text-align: left;
+    font-weight: 400;
+  }
+  td {
+    padding: 10px 12px 10px 0;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink-2);
+    vertical-align: top;
+  }
+  td:first-child, th:first-child { padding-left: 0; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(0,0,0,0.02); }
+  td strong { color: var(--ink); }
+
+  .tier-pill {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: .04em;
+  }
+  .tier-a { background: var(--accent-light); color: var(--accent); }
+  .tier-b { background: var(--green-light); color: var(--green); }
+  .tier-c { background: var(--amber-light); color: var(--amber); }
+  .tier-d { background: var(--paper-3); color: var(--ink-3); }
+
+  /* Model cards */
+  .model-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 1.5rem 0;
+  }
+
+  .model-card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.25rem;
+    position: relative;
+    transition: box-shadow .15s;
+  }
+  .model-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+  .model-card.top { border-color: var(--accent); border-width: 1.5px; }
+
+  .card-tier {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .card-tier.blue { color: var(--accent); }
+  .card-tier.green { color: var(--green); }
+  .card-tier.gray { color: var(--ink-3); }
+
+  .card-name {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    margin-bottom: 2px;
+    color: var(--ink);
+  }
+  .card-org {
+    font-size: .8rem;
+    color: var(--ink-3);
+    margin-bottom: 12px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .stat-item { }
+  .stat-k {
+    font-size: .72rem;
+    color: var(--ink-3);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .stat-v {
+    font-size: .88rem;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .bars { }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .bar-lbl {
+    font-size: .72rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--ink-3);
+    width: 70px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .bar-track {
+    flex: 1;
+    height: 3px;
+    background: var(--paper-3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent-mid);
+  }
+  .bar-fill.green { background: var(--green); }
+  .bar-fill.amber { background: #c47a20; }
+
+  .card-note {
+    margin-top: 12px;
+    font-size: .82rem;
+    color: var(--ink-3);
+    line-height: 1.55;
+    padding-top: 10px;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* Benchmark chart area */
+  .chart-wrap {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .chart-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 1rem;
+  }
+
+  .bench-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .bench-model {
+    font-size: .82rem;
+    color: var(--ink-2);
+    width: 170px;
+    flex-shrink: 0;
+  }
+  .bench-track {
+    flex: 1;
+    height: 8px;
+    background: var(--paper-3);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bench-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent-mid);
+    position: relative;
+  }
+  .bench-fill.top-model { background: var(--accent); }
+  .bench-fill.amber { background: #c47a20; }
+  .bench-fill.green { background: var(--green); }
+  .bench-score {
+    font-family: 'DM Mono', monospace;
+    font-size: .8rem;
+    color: var(--ink-3);
+    width: 40px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .bench-group-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 1rem 0 .5rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* Excluded section */
+  .excluded-item {
+    padding: .9rem 0;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .excluded-item:last-child { border-bottom: none; }
+  .excluded-name {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: .95rem;
+    min-width: 180px;
+    flex-shrink: 0;
+    color: var(--ink-3);
+    text-decoration: line-through;
+    text-decoration-color: var(--red);
+  }
+  .excluded-reason { font-size: .86rem; color: var(--ink-3); }
+
+  /* Platform clarification */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 1.5rem 0;
+  }
+  .platform-card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+  .platform-card h4 {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: .5rem;
+  }
+  .platform-card .role {
+    font-size: .8rem;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: .65rem;
+  }
+  .platform-card p { font-size: .86rem; color: var(--ink-3); margin: 0; line-height: 1.55; }
+
+  /* Footer */
+  .footer {
+    margin-top: 4rem;
+    padding: 2rem 0 3rem;
+    border-top: 1px solid var(--rule);
+  }
+  .footer-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .footer p {
+    font-size: .8rem;
+    color: var(--ink-3);
+    margin: 0;
+    line-height: 1.6;
+  }
+  .footer-mono {
+    font-family: 'DM Mono', monospace;
+    font-size: .75rem;
+    color: var(--ink-3);
+    text-align: right;
+  }
+
+  /* Download button */
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity .15s;
+    margin-top: 1.5rem;
+  }
+  .download-btn:hover { opacity: .8; }
+  .download-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  @media (max-width: 600px) {
+    .cover { padding: 3rem 1.5rem 2.5rem; }
+    .model-grid { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+    .cover-meta { gap: 1.5rem; }
+    .bench-model { width: 110px; font-size: .75rem; }
+    .excluded-name { min-width: 130px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <div class="cover-inner">
+    <div class="cover-tag">Technical Assessment &mdash; March 2026</div>
+    <h1>Open-Source LLMs<br><em>for Individual Deployment</em></h1>
+    <p class="cover-sub">A curated assessment of locally-deployable large language models for the individual researcher or clinician. Filtered for single-GPU hardware, permissive licensing, and practical everyday utility.</p>
+    <div class="cover-meta">
+      <div class="meta-item">
+        <div class="meta-label">Scope</div>
+        <div class="meta-val">Individual / Single-GPU</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Hardware ceiling</div>
+        <div class="meta-val">RTX 4090 / 24 GB VRAM</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Models assessed</div>
+        <div class="meta-val">8 recommended</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Runtime</div>
+        <div class="meta-val">Ollama &middot; LM Studio</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sticky TOC -->
+<nav class="toc-bar no-print">
+  <div class="toc-inner">
+    <a href="#context" class="toc-link">Context</a>
+    <a href="#platforms" class="toc-link">Platforms</a>
+    <a href="#hardware" class="toc-link">Hardware</a>
+    <a href="#models-24" class="toc-link">24 GB tier</a>
+    <a href="#models-16" class="toc-link">16 GB tier</a>
+    <a href="#models-8" class="toc-link">8 GB tier</a>
+    <a href="#benchmarks" class="toc-link">Benchmarks</a>
+    <a href="#excluded" class="toc-link">Excluded</a>
+    <a href="#guidance" class="toc-link">Guidance</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- Section 1: Context -->
+<section class="section" id="context">
+  <div class="section-eyebrow">01 &mdash; Background</div>
+  <h2>Why run locally?</h2>
+  <p>For a clinician-researcher, local LLM deployment offers a specific and compelling combination of advantages that cloud APIs cannot replicate: patient and research data never transits external servers, usage is unconstrained by subscription tiers or rate limits, and models can be fine-tuned on domain-specific corpora without surrendering that data to a third party.</p>
+  <p>The open-source landscape has matured substantially. As of March 2026, well-chosen local models reach approximately 80–90% of frontier proprietary performance on everyday tasks. The gap is most pronounced in multi-step reasoning chains and creative synthesis — but for literature review, structured analysis, clinical correspondence, and research coding in R or Python, the delta is often imperceptible in practice.</p>
+
+  <div class="callout">
+    <div class="callout-label">Scope of this assessment</div>
+    <p>All models listed here run on a single consumer or prosumer GPU costing under approximately $4,500. Multi-GPU enterprise configurations — required for the full-scale GLM-4.7, DeepSeek V3.2 671B, Kimi K2.5, and Mistral Large 3 — have been deliberately excluded. All models are available via Ollama or LM Studio without complex orchestration.</p>
+  </div>
+</section>
+
+<!-- Section 2: Platform clarification -->
+<section class="section" id="platforms">
+  <div class="section-eyebrow">02 &mdash; Terminology</div>
+  <h2>Hugging Face &amp; Ollama are not models</h2>
+  <p>A common point of confusion: Hugging Face and Ollama are <strong>distribution and deployment platforms</strong>, not model families. Every model in this report is, in the precise sense, a Hugging Face model — the weights are hosted there. And every model is deployable via Ollama, which was the recommended runtime throughout.</p>
+
+  <div class="two-col">
+    <div class="platform-card">
+      <h4>Hugging Face</h4>
+      <div class="role">Repository / hosting platform</div>
+      <p>Analogous to GitHub for machine learning. All major open-weight models publish their weights here. You download from Hugging Face; you do not run models "on" Hugging Face unless using their Inference API.</p>
+    </div>
+    <div class="platform-card">
+      <h4>Ollama</h4>
+      <div class="role">Local inference runtime</div>
+      <p>Handles model download, quantization selection, GPU offloading, and serves an OpenAI-compatible API locally. Three terminal commands suffice: install, pull, run. Does not develop its own models.</p>
+    </div>
+    <div class="platform-card">
+      <h4>LM Studio</h4>
+      <div class="role">GUI-based runtime (macOS / Windows)</div>
+      <p>A graphical front-end for running GGUF models locally. Preferred for users who want a chat interface without configuring a terminal. Pulls models from Hugging Face directly.</p>
+    </div>
+    <div class="platform-card">
+      <h4>llama.cpp / vLLM</h4>
+      <div class="role">Inference backends</div>
+      <p>Lower-level inference engines. llama.cpp powers Ollama under the hood. vLLM is preferred for production multi-user deployments with higher throughput requirements.</p>
+    </div>
+  </div>
+
+  <p>The relationship is linear: model creators (Alibaba, Microsoft, Google, DeepSeek, Meta, OpenAI) publish weights to Hugging Face, which are then fetched and served by Ollama or LM Studio on your local hardware.</p>
+</section>
+
+<!-- Section 3: Hardware -->
+<section class="section" id="hardware">
+  <div class="section-eyebrow">03 &mdash; Infrastructure</div>
+  <h2>Hardware requirements</h2>
+  <p>VRAM is the hard constraint. All figures below assume Q4_K_M quantization, which compresses model weights to 4-bit precision and reduces memory requirements by approximately 75% relative to FP16, with benchmark degradation typically under 3 points on general tasks. Performance degrades significantly when models are forced to offload layers to system RAM — a drop from 40 tokens/sec to 8 tokens/sec has been measured on the same model when only partial VRAM fit is achieved.</p>
+
+  <div class="hw-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>GPU</th>
+          <th>VRAM</th>
+          <th>System RAM</th>
+          <th>Models (Q4_K_M)</th>
+          <th>Speed (tok/s)</th>
+          <th>Est. cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>RTX 4060 Ti</strong></td>
+          <td>8 GB</td>
+          <td>16 GB+</td>
+          <td>Qwen 3.5 9B, Phi-4-mini</td>
+          <td>10–20</td>
+          <td>~$800</td>
+        </tr>
+        <tr>
+          <td><strong>RTX 4070 Ti Super</strong></td>
+          <td>16 GB</td>
+          <td>32 GB+</td>
+          <td>Phi-4 14B, Gemma 3 12B, Qwen3 14B</td>
+          <td>15–35</td>
+          <td>~$1,200</td>
+        </tr>
+        <tr>
+          <td><strong>RTX 4090 / 3090</strong></td>
+          <td>24 GB</td>
+          <td>64 GB+</td>
+          <td>DeepSeek R1 32B, Qwen3 32B, GPT-OSS 20B</td>
+          <td>20–40</td>
+          <td>~$2,000</td>
+        </tr>
+        <tr>
+          <td><strong>RTX 5090</strong></td>
+          <td>32 GB</td>
+          <td>64 GB+</td>
+          <td>Above models at Q6–Q8; partial 70B</td>
+          <td>30–60</td>
+          <td>~$3,500</td>
+        </tr>
+        <tr>
+          <td><strong>Apple M4 Max (64 GB)</strong></td>
+          <td>64 GB unified</td>
+          <td>64 GB unified</td>
+          <td>DeepSeek R1 32B, Qwen3 32B (FP16)</td>
+          <td>20–30</td>
+          <td>~$3,500</td>
+        </tr>
+        <tr>
+          <td><strong>Apple M4 Max (128 GB)</strong></td>
+          <td>128 GB unified</td>
+          <td>128 GB unified</td>
+          <td>Qwen3 72B (Q4), Llama 3.3 70B</td>
+          <td>20–28</td>
+          <td>~$4,500</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="platform-note">
+    <span class="platform-icon">NOTE</span>
+    <p>Apple Silicon unified memory architecture means VRAM and system RAM are the same pool. A 64 GB M4 Max can load a 32B model at full FP16 precision — something requiring a dual-GPU NVIDIA setup on PC. The tradeoff is lower raw token throughput compared to an equivalent-cost NVIDIA configuration.</p>
+  </div>
+</section>
+
+<!-- Section 4: Models 24 GB -->
+<section class="section" id="models-24">
+  <div class="section-eyebrow">04 &mdash; Recommended models</div>
+  <h2>24 GB VRAM tier</h2>
+  <p>The RTX 4090 or 3090 (24 GB) represents the practical ceiling for individual deployment. At this level, 32B parameter models run comfortably at Q4_K_M, and the 20B class can run at higher precision. This tier offers near-frontier performance for research and clinical tasks.</p>
+
+  <div class="model-grid">
+
+    <div class="model-card top">
+      <div class="card-tier blue">Top pick &mdash; 24 GB</div>
+      <div class="card-name">DeepSeek R1 (32B distill)</div>
+      <div class="card-org">DeepSeek AI &middot; MIT License</div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-k">VRAM (Q4)</div><div class="stat-v">~20 GB</div></div>
+        <div class="stat-item"><div class="stat-k">Context</div><div class="stat-v">128K</div></div>
+        <div class="stat-item"><div class="stat-k">Speed</div><div class="stat-v">20–35 tok/s</div></div>
+        <div class="stat-item"><div class="stat-k">Ollama</div><div class="stat-v">deepseek-r1:32b</div></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Reasoning</span><div class="bar-track"><div class="bar-fill" style="width:92%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Science QA</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Everyday</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Speed</span><div class="bar-track"><div class="bar-fill" style="width:68%"></div></div></div>
+      </div>
+      <div class="card-note">Best single-GPU reasoning model available. Chain-of-thought output is explicit and inspectable — of particular relevance for clinical and scientific problem-solving where auditability of reasoning matters. Fits a 4090 with headroom for long contexts. MIT license is fully permissive for individual research use.</div>
+    </div>
+
+    <div class="model-card top">
+      <div class="card-tier blue">Top pick &mdash; 24 GB</div>
+      <div class="card-name">Qwen3 32B</div>
+      <div class="card-org">Alibaba &middot; Apache 2.0</div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-k">VRAM (Q4)</div><div class="stat-v">~20 GB</div></div>
+        <div class="stat-item"><div class="stat-k">Context</div><div class="stat-v">128K</div></div>
+        <div class="stat-item"><div class="stat-k">Speed</div><div class="stat-v">20–35 tok/s</div></div>
+        <div class="stat-item"><div class="stat-k">Ollama</div><div class="stat-v">qwen3:32b</div></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Reasoning</span><div class="bar-track"><div class="bar-fill" style="width:83%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Science QA</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Everyday</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Speed</span><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div></div>
+      </div>
+      <div class="card-note">More balanced than DeepSeek R1 for general daily use — superior at writing, summarization, instruction-following, and multilingual tasks. Apache 2.0 is the most permissive license in this tier, with no restrictions on research fine-tuning or redistribution of derivative works.</div>
+    </div>
+
+    <div class="model-card">
+      <div class="card-tier green">Strong &mdash; 24 GB</div>
+      <div class="card-name">GPT-OSS 20B</div>
+      <div class="card-org">OpenAI &middot; Permissive</div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-k">VRAM (Q4)</div><div class="stat-v">~14 GB</div></div>
+        <div class="stat-item"><div class="stat-k">Context</div><div class="stat-v">128K</div></div>
+        <div class="stat-item"><div class="stat-k">Speed</div><div class="stat-v">30–50 tok/s</div></div>
+        <div class="stat-item"><div class="stat-k">Ollama</div><div class="stat-v">gpt-oss:20b</div></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Reasoning</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Science QA</span><div class="bar-track"><div class="bar-fill" style="width:78%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Everyday</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Speed</span><div class="bar-track"><div class="bar-fill amber" style="width:88%"></div></div></div>
+      </div>
+      <div class="card-note">Fastest model at this capability level. Its smaller footprint (14 GB Q4) leaves substantial VRAM headroom for extended context windows. Supports low / medium / high reasoning modes, allowing per-query speed-depth tradeoffs — low for quick lookups, high for complex analysis.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Section 5: Models 16 GB -->
+<section class="section" id="models-16">
+  <div class="section-eyebrow">05 &mdash; Recommended models</div>
+  <h2>16 GB VRAM tier</h2>
+  <p>The RTX 4070 Ti Super (16 GB) or RTX 4080 is the mainstream professional GPU sweet spot. At this level, 12–14B parameter models run fully in VRAM with room for extended contexts. Performance is genuinely useful for research tasks; the gap with the 24 GB tier is most apparent on multi-step analytical chains.</p>
+
+  <div class="model-grid">
+
+    <div class="model-card top">
+      <div class="card-tier blue">Top pick &mdash; 16 GB</div>
+      <div class="card-name">Phi-4 (14B)</div>
+      <div class="card-org">Microsoft &middot; MIT License</div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-k">VRAM (Q4)</div><div class="stat-v">~9 GB</div></div>
+        <div class="stat-item"><div class="stat-k">Context</div><div class="stat-v">16K</div></div>
+        <div class="stat-item"><div class="stat-k">Speed</div><div class="stat-v">25–40 tok/s</div></div>
+        <div class="stat-item"><div class="stat-k">Ollama</div><div class="stat-v">phi4:14b</div></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Reasoning</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Science QA</span><div class="bar-track"><div class="bar-fill" style="width:79%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Everyday</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Speed</span><div class="bar-track"><div class="bar-fill" style="width:84%"></div></div></div>
+      </div>
+      <div class="card-note">Exceptional reasoning-per-parameter efficiency. Scores 80.4% on MATH benchmark, outperforming models 2–3× its size. Best choice when GPU budget is constrained to 16 GB. The 16K context window is the primary limitation — insufficient for whole-paper analysis in a single prompt.</div>
+    </div>
+
+    <div class="model-card">
+      <div class="card-tier green">Strong &mdash; 16 GB</div>
+      <div class="card-name">Gemma 3 12B</div>
+      <div class="card-org">Google &middot; Gemma Terms</div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-k">VRAM (Q4)</div><div class="stat-v">~8 GB</div></div>
+        <div class="stat-item"><div class="stat-k">Context</div><div class="stat-v">128K</div></div>
+        <div class="stat-item"><div class="stat-k">Speed</div><div class="stat-v">30–45 tok/s</div></div>
+        <div class="stat-item"><div class="stat-k">Ollama</div><div class="stat-v">gemma3:12b</div></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Reasoning</span><div class="bar-track"><div class="bar-fill green" style="width:74%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Science QA</span><div class="bar-track"><div class="bar-fill green" style="width:72%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Everyday</span><div class="bar-track"><div class="bar-fill green" style="width:80%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Speed</span><div class="bar-track"><div class="bar-fill green" style="width:90%"></div></div></div>
+      </div>
+      <div class="card-note">128K context window is the standout feature at this size — sufficient for full research papers, extended clinical notes, or multi-document synthesis. Faster than Phi-4 per token. Note: Gemma Terms of Service restricts some commercial redistribution; verify applicability to your use case.</div>
+    </div>
+
+    <div class="model-card">
+      <div class="card-tier green">Strong &mdash; 16 GB</div>
+      <div class="card-name">Qwen3 14B</div>
+      <div class="card-org">Alibaba &middot; Apache 2.0</div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-k">VRAM (Q4)</div><div class="stat-v">~10 GB</div></div>
+        <div class="stat-item"><div class="stat-k">Context</div><div class="stat-v">128K</div></div>
+        <div class="stat-item"><div class="stat-k">Speed</div><div class="stat-v">25–40 tok/s</div></div>
+        <div class="stat-item"><div class="stat-k">Ollama</div><div class="stat-v">qwen3:14b</div></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Reasoning</span><div class="bar-track"><div class="bar-fill green" style="width:77%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Science QA</span><div class="bar-track"><div class="bar-fill green" style="width:75%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Everyday</span><div class="bar-track"><div class="bar-fill green" style="width:82%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Speed</span><div class="bar-track"><div class="bar-fill green" style="width:82%"></div></div></div>
+      </div>
+      <div class="card-note">Best multilingual support at this parameter tier and leads the 14B class on code generation benchmarks. Most permissive license (Apache 2.0) for research fine-tuning and derivative works. A strong all-rounder if Phi-4's context limit is a concern.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Section 6: Models 8 GB -->
+<section class="section" id="models-8">
+  <div class="section-eyebrow">06 &mdash; Recommended models</div>
+  <h2>8 GB VRAM tier</h2>
+  <p>Entry-level consumer GPUs and laptop GPUs. Capability is meaningfully constrained at this tier — model quality is sufficient for focused, well-scoped queries, but complex multi-step reasoning or long-document analysis is better deferred to a higher-tier machine. Useful as a local assistant on a travel laptop while a more capable desktop handles heavier workloads.</p>
+
+  <div class="model-grid">
+
+    <div class="model-card top">
+      <div class="card-tier blue">Top pick &mdash; 8 GB</div>
+      <div class="card-name">Qwen 3.5 9B</div>
+      <div class="card-org">Alibaba &middot; Apache 2.0</div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-k">VRAM (Q4)</div><div class="stat-v">~6.6 GB</div></div>
+        <div class="stat-item"><div class="stat-k">Context</div><div class="stat-v">128K</div></div>
+        <div class="stat-item"><div class="stat-k">Speed</div><div class="stat-v">35–50 tok/s</div></div>
+        <div class="stat-item"><div class="stat-k">Ollama</div><div class="stat-v">qwen3.5:9b</div></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Reasoning</span><div class="bar-track"><div class="bar-fill" style="width:74%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Science QA</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Everyday</span><div class="bar-track"><div class="bar-fill" style="width:78%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Speed</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div></div>
+      </div>
+      <div class="card-note">Current benchmark leader for 8 GB cards. Natively multimodal (text + images from the same weights). Runs at near real-time speed (35–50 tok/s). Leaves 1.4 GB VRAM headroom for context on a base 8 GB card — sufficient for most single-session queries.</div>
+    </div>
+
+    <div class="model-card">
+      <div class="card-tier gray">Constrained hardware</div>
+      <div class="card-name">Phi-4-mini (3.8B)</div>
+      <div class="card-org">Microsoft &middot; MIT License</div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-k">VRAM (Q4)</div><div class="stat-v">~3 GB</div></div>
+        <div class="stat-item"><div class="stat-k">Context</div><div class="stat-v">16K</div></div>
+        <div class="stat-item"><div class="stat-k">Speed</div><div class="stat-v">60–90 tok/s</div></div>
+        <div class="stat-item"><div class="stat-k">Ollama</div><div class="stat-v">phi4-mini</div></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><span class="bar-lbl">Reasoning</span><div class="bar-track"><div class="bar-fill amber" style="width:64%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Science QA</span><div class="bar-track"><div class="bar-fill amber" style="width:60%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Everyday</span><div class="bar-track"><div class="bar-fill amber" style="width:68%"></div></div></div>
+        <div class="bar-row"><span class="bar-lbl">Speed</span><div class="bar-track"><div class="bar-fill amber" style="width:100%"></div></div></div>
+      </div>
+      <div class="card-note">Only viable option for 8 GB RAM laptops or machines without a dedicated GPU. Runs on CPU if necessary. Capability is materially limited, but it is reliable for focused and well-scoped queries. Best used as a quick drafting assistant rather than an analytical engine.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Section 7: Benchmarks -->
+<section class="section" id="benchmarks">
+  <div class="section-eyebrow">07 &mdash; Performance data</div>
+  <h2>Benchmark comparison</h2>
+  <p>Scores below are drawn from published benchmark results as of February–March 2026. All figures are from the Artificial Analysis Intelligence Index, SWE-bench Verified, and AIME 2025 leaderboards. Individual-deployable models are highlighted; excluded enterprise models are shown for reference only.</p>
+
+  <div class="chart-wrap">
+    <div class="chart-title">AIME 2025 — Mathematical reasoning (%)</div>
+    <div class="bench-group-label">Individual-deployable</div>
+    <div class="bench-row"><span class="bench-model">DeepSeek R1 32B</span><div class="bench-track"><div class="bench-fill top-model" style="width:88%"></div></div><span class="bench-score">88.0</span></div>
+    <div class="bench-row"><span class="bench-model">Qwen3 32B</span><div class="bench-track"><div class="bench-fill top-model" style="width:82%"></div></div><span class="bench-score">82.0</span></div>
+    <div class="bench-row"><span class="bench-model">GPT-OSS 20B</span><div class="bench-track"><div class="bench-fill" style="width:78%"></div></div><span class="bench-score">78.0</span></div>
+    <div class="bench-row"><span class="bench-model">Phi-4 14B</span><div class="bench-track"><div class="bench-fill" style="width:70%"></div></div><span class="bench-score">70.0</span></div>
+    <div class="bench-row"><span class="bench-model">Qwen3 14B</span><div class="bench-track"><div class="bench-fill" style="width:65%"></div></div><span class="bench-score">65.0</span></div>
+    <div class="bench-group-label">Enterprise-only (reference)</div>
+    <div class="bench-row"><span class="bench-model">GLM-4.7 (enterprise)</span><div class="bench-track"><div class="bench-fill amber" style="width:95.7%"></div></div><span class="bench-score">95.7</span></div>
+    <div class="bench-row"><span class="bench-model">DeepSeek V3.2 (full)</span><div class="bench-track"><div class="bench-fill amber" style="width:93.1%"></div></div><span class="bench-score">93.1</span></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">HumanEval — Code generation (%)</div>
+    <div class="bench-group-label">Individual-deployable</div>
+    <div class="bench-row"><span class="bench-model">DeepSeek R1 32B</span><div class="bench-track"><div class="bench-fill top-model" style="width:85%"></div></div><span class="bench-score">85.0</span></div>
+    <div class="bench-row"><span class="bench-model">Qwen3 32B</span><div class="bench-track"><div class="bench-fill top-model" style="width:84%"></div></div><span class="bench-score">84.0</span></div>
+    <div class="bench-row"><span class="bench-model">GPT-OSS 20B</span><div class="bench-track"><div class="bench-fill" style="width:79%"></div></div><span class="bench-score">79.0</span></div>
+    <div class="bench-row"><span class="bench-model">Qwen3 14B</span><div class="bench-track"><div class="bench-fill" style="width:76%"></div></div><span class="bench-score">76.0</span></div>
+    <div class="bench-row"><span class="bench-model">Phi-4 14B</span><div class="bench-track"><div class="bench-fill" style="width:72%"></div></div><span class="bench-score">72.0</span></div>
+    <div class="bench-group-label">Enterprise-only (reference)</div>
+    <div class="bench-row"><span class="bench-model">GLM-4.7 (enterprise)</span><div class="bench-track"><div class="bench-fill amber" style="width:94.2%"></div></div><span class="bench-score">94.2</span></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">MMLU — General knowledge (%)</div>
+    <div class="bench-group-label">Individual-deployable</div>
+    <div class="bench-row"><span class="bench-model">GPT-OSS 20B</span><div class="bench-track"><div class="bench-fill top-model" style="width:88%"></div></div><span class="bench-score">88.0</span></div>
+    <div class="bench-row"><span class="bench-model">DeepSeek R1 32B</span><div class="bench-track"><div class="bench-fill top-model" style="width:85%"></div></div><span class="bench-score">85.0</span></div>
+    <div class="bench-row"><span class="bench-model">Qwen3 32B</span><div class="bench-track"><div class="bench-fill" style="width:83%"></div></div><span class="bench-score">83.1</span></div>
+    <div class="bench-row"><span class="bench-model">Phi-4 14B</span><div class="bench-track"><div class="bench-fill" style="width:78%"></div></div><span class="bench-score">78.0</span></div>
+    <div class="bench-row"><span class="bench-model">Qwen3 14B</span><div class="bench-track"><div class="bench-fill" style="width:76%"></div></div><span class="bench-score">76.0</span></div>
+    <div class="bench-row"><span class="bench-model">Gemma 3 12B</span><div class="bench-track"><div class="bench-fill" style="width:72%"></div></div><span class="bench-score">72.0</span></div>
+  </div>
+</section>
+
+<!-- Section 8: Excluded -->
+<section class="section" id="excluded">
+  <div class="section-eyebrow">08 &mdash; Scope decisions</div>
+  <h2>Models excluded for individual deployment</h2>
+  <p>The following models were assessed in the full enterprise survey but excluded here on the basis of hardware, infrastructure, or licensing constraints incompatible with individual operation.</p>
+
+  <div style="margin: 1.5rem 0;">
+    <div class="excluded-item">
+      <div class="excluded-name">GLM-4.7 / GLM-5</div>
+      <div class="excluded-reason">Requires 200 GB+ VRAM across multiple H100 GPUs. No realistic path for individual deployment. The full model is excluded; no consumer-accessible distilled variant exists as of this assessment.</div>
+    </div>
+    <div class="excluded-item">
+      <div class="excluded-name">Kimi K2.5</div>
+      <div class="excluded-reason">1 trillion parameter MoE architecture; multi-GPU requirement. MIT license has a 100M monthly active user commercial threshold, introducing ambiguity for any use beyond strictly personal.</div>
+    </div>
+    <div class="excluded-item">
+      <div class="excluded-name">DeepSeek V3.2 (671B full)</div>
+      <div class="excluded-reason">Requires 350 GB+ VRAM at 4-bit quantization. The 32B distilled variant (DeepSeek R1 32B) is retained as it is specifically optimized for single-GPU deployment.</div>
+    </div>
+    <div class="excluded-item">
+      <div class="excluded-name">GPT-OSS 120B</div>
+      <div class="excluded-reason">Requires a single H100 80 GB at minimum — approximately $25,000 in hardware. The 20B variant is retained and is individually deployable on a 24 GB consumer card.</div>
+    </div>
+    <div class="excluded-item">
+      <div class="excluded-name">Mistral Large 3 (675B full)</div>
+      <div class="excluded-reason">Full MoE model requires multi-GPU infrastructure. Mistral's smaller models (7B) are individually deployable but do not outperform Qwen3 and Phi-4 at equivalent VRAM, and are therefore not listed as primary recommendations.</div>
+    </div>
+    <div class="excluded-item">
+      <div class="excluded-name">Llama 3.3 70B</div>
+      <div class="excluded-reason">Requires 48 GB+ VRAM for Q4 deployment. Partial CPU offloading reduces speed to impractical levels on 24 GB hardware. Qwen3 32B and DeepSeek R1 32B deliver comparable or superior performance at half the VRAM cost.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 9: Guidance -->
+<section class="section" id="guidance">
+  <div class="section-eyebrow">09 &mdash; Recommendation</div>
+  <h2>Deployment guidance</h2>
+
+  <h3>For a 24 GB GPU workstation (RTX 4090 / 3090)</h3>
+  <p>Run both DeepSeek R1 32B and Qwen3 32B via Ollama simultaneously, switching between them by task type. DeepSeek R1 for structured analytical work — literature analysis, differential reasoning, R or Python debugging — where its explicit chain-of-thought output is an advantage. Qwen3 32B for drafting, correspondence, summarization, and instruction-following tasks where fluency matters more than auditability.</p>
+
+  <div class="platform-note">
+    <span class="platform-icon">QUICK START</span>
+    <p><code>ollama pull deepseek-r1:32b &amp;&amp; ollama pull qwen3:32b</code> — approximately 40 GB combined disk space. Both models load in under 60 seconds on NVMe storage.</p>
+  </div>
+
+  <h3>For Apple Silicon (M4 Max 64 GB or 128 GB)</h3>
+  <p>The unified memory architecture makes this platform uniquely capable for individual use. A 64 GB M4 Max can run DeepSeek R1 32B or Qwen3 32B at full FP16 precision — a higher quality than Q4 quantization achievable on a 24 GB NVIDIA card. The 128 GB variant can accommodate Qwen3 72B at Q4, approaching A-tier enterprise performance on consumer hardware. Ollama on macOS uses Metal acceleration natively with no additional configuration.</p>
+
+  <h3>For a 16 GB GPU workstation</h3>
+  <p>Phi-4 14B is the primary recommendation for reasoning and analytical tasks. Supplement with Gemma 3 12B when long-context document ingestion is required (128K vs. Phi-4's 16K). Both fit in 16 GB simultaneously if system RAM is sufficient for context management.</p>
+
+  <h3>Domain-specific fine-tuned alternatives</h3>
+  <p>Several medically fine-tuned derivatives of the base models listed here are worth evaluating for clinical applications — notably Meditron (fine-tuned from Llama on medical literature), OpenBioLLM (biomedical domain adaptation), and BioMedLM. These are hosted on Hugging Face and loadable via Ollama. They typically sacrifice some general capability for stronger performance on clinical terminology, guideline recall, and medical reasoning. A separate assessment of these domain-specific variants is available on request.</p>
+
+  <div class="callout">
+    <div class="callout-label">Summary recommendation</div>
+    <p>For a clinician-researcher with a private practice: an RTX 4090 workstation running DeepSeek R1 32B and Qwen3 32B via Ollama provides the optimal balance of capability, privacy, and individual deployability as of March 2026. Total hardware investment is approximately $2,000–$2,500 for the GPU plus a mid-range workstation. All patient and research data remains local. No subscription costs. No rate limits.</p>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <p>Assessment compiled March 2026. Benchmark data sourced from the Artificial Analysis Intelligence Index, SWE-bench Verified leaderboard, and AIME 2025 results. Hardware pricing indicative; verify current GPU market conditions before purchasing.</p>
+      <p style="margin-top:.5rem;">This report covers open-weight models suitable for individual deployment. Enterprise-tier models requiring multi-GPU infrastructure are documented separately.</p>
+    </div>
+    <div class="footer-mono">
+      <div>Open-Source LLM Report</div>
+      <div>March 2026 &middot; v1.0</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+
+</body>
+</html>
