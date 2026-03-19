@@ -632,6 +632,7 @@
     <a href="#models-16" class="toc-link">16 GB tier</a>
     <a href="#models-8" class="toc-link">8 GB tier</a>
     <a href="#benchmarks" class="toc-link">Benchmarks</a>
+    <a href="#security" class="toc-link">Security</a>
     <a href="#excluded" class="toc-link">Excluded</a>
     <a href="#guidance" class="toc-link">Guidance</a>
     <a href="#hardware-builds" class="toc-link">Hardware builds</a>
@@ -956,9 +957,108 @@
   </div>
 </section>
 
+<!-- Section 7b: Security Concerns -->
+<section class="section page-break" id="security">
+  <div class="section-eyebrow">07 &mdash; Security assessment</div>
+  <h2>Security concerns &amp; potential threats</h2>
+  <p>Running LLMs locally mitigates many cloud-specific risks (data exfiltration, API interception, third-party retention) but introduces a distinct threat surface. Each model carries provenance, supply-chain, and operational risks that vary by origin, license, and architecture. The following assessment evaluates each recommended model individually.</p>
+
+  <div class="callout" style="border-left-color:var(--red);background:var(--red-light);">
+    <div class="callout-label" style="color:var(--red);">Critical principle</div>
+    <p>No locally-deployed LLM should ever be exposed directly to the internet, granted filesystem write access beyond its working directory, or permitted to execute arbitrary system commands without sandboxing. All models below assume air-gapped or firewall-isolated deployment.</p>
+  </div>
+
+  <h3>DeepSeek R1 32B <span class="tier-pill tier-c">Medium risk</span></h3>
+  <p><strong>Provenance risk:</strong> Developed by DeepSeek AI (China). Model weights are distributed under the MIT license and are fully inspectable. However, the training pipeline, data provenance, and alignment methodology are not fully transparent. There is no independent third-party audit of the training process. For researchers handling sensitive data, the Chinese jurisdiction of origin may trigger institutional compliance review requirements under certain U.S. and EU data governance frameworks.</p>
+  <p><strong>Supply-chain risk:</strong> Weights are distributed via Hugging Face and Ollama registries. Verify SHA-256 checksums against published values on the official DeepSeek GitHub repository before deployment. Tampered weights could introduce subtle biases or data-leaking behaviors that are extremely difficult to detect post-deployment.</p>
+  <p><strong>Operational risk:</strong> The explicit chain-of-thought output, while valuable for auditability, can inadvertently surface memorized training data — including PII fragments, code snippets, or proprietary text from the training corpus. Monitor outputs for unintended disclosures, especially in clinical or legal contexts.</p>
+
+  <h3>Qwen3 32B / Qwen3 14B / Qwen 3.5 9B <span class="tier-pill tier-c">Medium risk</span></h3>
+  <p><strong>Provenance risk:</strong> Developed by Alibaba Cloud (China). Licensed under Apache 2.0, the most permissive license in this assessment, and weights are publicly auditable. As with DeepSeek, the training data composition and alignment process are not fully disclosed. Alibaba is subject to Chinese data governance regulations, which may introduce institutional compliance friction for government-funded research in some jurisdictions.</p>
+  <p><strong>Supply-chain risk:</strong> Distributed through Hugging Face and Ollama. The Qwen model family has been widely adopted with a large community of independent reviewers, which provides a degree of distributed verification. Always verify checksums against Alibaba's official model cards. The Apache 2.0 license permits redistribution of modified weights, meaning third-party mirrors could distribute altered versions — download only from primary sources.</p>
+  <p><strong>Operational risk:</strong> Qwen models support tool calling and function execution. If deployed with tool-use capabilities enabled, ensure that callable functions are explicitly whitelisted and sandboxed. Prompt injection attacks targeting tool-calling models are a known and active threat vector.</p>
+
+  <h3>GPT-OSS 20B <span class="tier-pill tier-b">Lower risk</span></h3>
+  <p><strong>Provenance risk:</strong> Developed by OpenAI (United States). This is OpenAI's first major open-weight release, and it carries a permissive license. OpenAI has published more detailed documentation of its safety testing and red-teaming process than most open-source competitors, and the model has undergone external safety evaluation. U.S. jurisdiction aligns with most Western institutional compliance frameworks.</p>
+  <p><strong>Supply-chain risk:</strong> Distributed through official OpenAI channels, Hugging Face, and Ollama. The high-profile nature of this release means it is among the most scrutinized open models available. Verify weights against OpenAI's published checksums. The smaller 20B parameter count means the model is easier to analyze and audit than larger alternatives.</p>
+  <p><strong>Operational risk:</strong> The configurable reasoning modes (low/medium/high) introduce a potential risk: in "low" reasoning mode, the model may produce outputs with less self-checking, increasing the likelihood of hallucination or unsafe completions. Use "high" reasoning mode for any output that informs clinical or research decisions. The model's relatively small size (14 GB at Q4) means it can be loaded alongside other processes, increasing the attack surface if the host machine is not properly isolated.</p>
+
+  <h3>Phi-4 14B / Phi-4-mini 3.8B <span class="tier-pill tier-a">Lower risk</span></h3>
+  <p><strong>Provenance risk:</strong> Developed by Microsoft Research (United States). MIT-licensed with extensive published documentation of training methodology, data composition, and safety evaluations. Microsoft's responsible AI framework includes red-teaming and bias testing. Among the most transparent training pipelines in this assessment.</p>
+  <p><strong>Supply-chain risk:</strong> Distributed through Microsoft's official Hugging Face organization and Ollama. Strong institutional backing reduces (but does not eliminate) the risk of supply-chain compromise. The MIT license is unambiguous regarding permitted use.</p>
+  <p><strong>Operational risk:</strong> The 16K context window on Phi-4 14B limits the attack surface for context-stuffing attacks. Phi-4-mini's 3.8B parameter count makes it the least capable model in the assessment, and therefore the most susceptible to adversarial prompting — it may be easier to jailbreak than larger models. Do not rely on Phi-4-mini for safety-critical outputs.</p>
+
+  <h3>Gemma 3 12B <span class="tier-pill tier-b">Lower risk</span></h3>
+  <p><strong>Provenance risk:</strong> Developed by Google DeepMind (United States). The Gemma Terms of Use are more restrictive than Apache 2.0 or MIT and include provisions around permitted use cases. Google has published detailed model cards, safety evaluations, and bias assessments. Google's jurisdiction and institutional reputation provide a high baseline of trust.</p>
+  <p><strong>Supply-chain risk:</strong> Distributed through Google's official Hugging Face organization and Ollama. The Gemma Terms restrict redistribution of modified weights, which limits the risk of tampered third-party mirrors but also limits community auditing of fine-tuned derivatives.</p>
+  <p><strong>Operational risk:</strong> The 128K context window is large enough to be susceptible to context-window poisoning attacks if ingesting untrusted documents. Sanitize all inputs before processing through Gemma 3 12B, especially when processing PDFs, web content, or email attachments that could contain adversarial prompt injections.</p>
+
+  <h3>Cross-model threat summary</h3>
+  <table style="width:100%;border-collapse:collapse;margin:2rem 0;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <th style="text-align:left;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Model</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Provenance</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Supply chain</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Operational</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Overall</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);"><strong>Phi-4 14B</strong></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);"><strong>GPT-OSS 20B</strong></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Low–Med</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);"><strong>Gemma 3 12B</strong></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Low–Med</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);"><strong>DeepSeek R1 32B</strong></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-c">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-c">Medium</span></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);"><strong>Qwen3 family</strong></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-c">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-c">Medium</span></td>
+      </tr>
+      <tr>
+        <td style="padding:0.75rem;color:var(--ink-2);"><strong>Phi-4-mini 3.8B</strong></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-a">Low</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-c">Med</span></td>
+        <td style="text-align:center;padding:0.75rem;"><span class="tier-pill tier-b">Low–Med</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="callout-label">Mitigation checklist</div>
+    <p><strong>1.</strong> Verify SHA-256 checksums for all downloaded model weights against official sources before deployment. <strong>2.</strong> Run LLM inference processes in a sandboxed environment (Docker container or dedicated VM) with no outbound network access. <strong>3.</strong> Never pipe LLM output directly into system commands, database queries, or file operations without explicit validation. <strong>4.</strong> Sanitize all input documents for embedded prompt injection before processing. <strong>5.</strong> Maintain a local audit log of all queries and outputs for clinical/research deployments. <strong>6.</strong> Review institutional compliance requirements regarding model provenance before deploying Chinese-origin models on government-funded or HIPAA-adjacent workloads.</p>
+  </div>
+</section>
+
 <!-- Section 8: Excluded -->
 <section class="section" id="excluded">
-  <div class="section-eyebrow">07 &mdash; Scope decisions</div>
+  <div class="section-eyebrow">08 &mdash; Scope decisions</div>
   <h2>Models excluded for individual deployment</h2>
   <p>The following models were assessed in the full enterprise survey but excluded here on the basis of hardware, infrastructure, or licensing constraints incompatible with individual operation.</p>
 
@@ -992,108 +1092,165 @@
 
 <!-- Section 9: Guidance -->
 <section class="section" id="guidance">
-  <div class="section-eyebrow">08 &mdash; Recommendation</div>
+  <div class="section-eyebrow">09 &mdash; Recommendation</div>
   <h2>Deployment guidance</h2>
 
+  <div class="callout" style="border-left-color:var(--green);background:var(--green-light);">
+    <div class="callout-label" style="color:var(--green);">Scoring methodology update</div>
+    <p>Recommendations in this section apply a <strong>weighted scoring model</strong> that prioritizes scientific reasoning (40% weight) and inference speed (30% weight) over everyday fluency (20%) and context length (10%). This reflects the primary use case of a clinician-researcher who needs rapid, accurate analytical outputs for scientific problem-solving. Models that score well on general chat but lag on reasoning or speed are penalized accordingly.</p>
+  </div>
+
   <h3>For a 24 GB GPU workstation (RTX 4090 / 3090)</h3>
-  <p>Run both DeepSeek R1 32B and Qwen3 32B via Ollama simultaneously, switching between them by task type. DeepSeek R1 for structured analytical work — literature analysis, differential reasoning, R or Python debugging — where its explicit chain-of-thought output is an advantage. Qwen3 32B for drafting, correspondence, summarization, and instruction-following tasks where fluency matters more than auditability.</p>
+  <p>Under the weighted scoring model, <strong>GPT-OSS 20B is the primary recommendation</strong> for 24 GB deployments. Its combination of strong scientific reasoning (78% AIME, 88% MMLU) and class-leading inference speed (30–50 tok/s) yields the highest weighted score in this tier. The model's 14 GB Q4 footprint leaves 10 GB of VRAM headroom — enough to serve extended 128K context queries or run a secondary lightweight model simultaneously.</p>
+  <p>Deploy GPT-OSS 20B as the default workhorse model via Ollama, using "high" reasoning mode for analytical tasks and "low" mode for quick lookups and drafting. Supplement with DeepSeek R1 32B when explicit chain-of-thought auditability is required — for instance, when reasoning steps must be documented for peer review or clinical audit trails. Qwen3 32B remains valuable for multilingual tasks, correspondence, and long-form writing where fluency outweighs analytical precision.</p>
 
   <div class="platform-note">
     <span class="platform-icon">QUICK START</span>
-    <p><code>ollama pull deepseek-r1:32b &amp;&amp; ollama pull qwen3:32b</code> — approximately 40 GB combined disk space. Both models load in under 60 seconds on NVMe storage.</p>
+    <p><code>ollama pull gpt-oss:20b &amp;&amp; ollama pull deepseek-r1:32b</code> — approximately 35 GB combined disk space. GPT-OSS 20B loads in under 30 seconds on NVMe storage due to its smaller footprint.</p>
   </div>
 
+  <h3>Weighted score comparison (24 GB tier)</h3>
+  <table style="width:100%;border-collapse:collapse;margin:1.5rem 0;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <th style="text-align:left;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Model</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Sci. reasoning (40%)</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Speed (30%)</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Everyday (20%)</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Context (10%)</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--accent);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Weighted</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--rule);background:var(--green-light);">
+        <td style="padding:0.75rem;"><strong>GPT-OSS 20B</strong></td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">78</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--green);font-weight:600;">88</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">85</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">90</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--accent);font-weight:600;">83.6</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;"><strong>DeepSeek R1 32B</strong></td>
+        <td style="text-align:center;padding:0.75rem;color:var(--green);font-weight:600;">88</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">68</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">80</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">90</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--accent);font-weight:600;">80.6</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;"><strong>Qwen3 32B</strong></td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">80</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">72</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">88</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">90</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--accent);font-weight:600;">80.2</td>
+      </tr>
+    </tbody>
+  </table>
+
   <h3>For Apple Silicon (M4 Max 64 GB or 128 GB)</h3>
-  <p>The unified memory architecture makes this platform uniquely capable for individual use. A 64 GB M4 Max can run DeepSeek R1 32B or Qwen3 32B at full FP16 precision — a higher quality than Q4 quantization achievable on a 24 GB NVIDIA card. The 128 GB variant can accommodate Qwen3 72B at Q4, approaching A-tier enterprise performance on consumer hardware. Ollama on macOS uses Metal acceleration natively with no additional configuration.</p>
+  <p>GPT-OSS 20B runs exceptionally well on Apple Silicon. At only ~14 GB Q4, the M4 Max 64 GB can load GPT-OSS 20B at full FP16 precision (approximately 40 GB) with substantial headroom — an inference quality tier above what's achievable on a 24 GB NVIDIA card. Metal acceleration on macOS delivers 40–70 tok/s, making this the fastest consumer platform for GPT-OSS 20B. For researchers who also need chain-of-thought auditability, the 64 GB configuration can load both GPT-OSS 20B (FP16) and DeepSeek R1 32B (Q4) simultaneously.</p>
 
   <h3>For a 16 GB GPU workstation</h3>
-  <p>Phi-4 14B is the primary recommendation for reasoning and analytical tasks. Supplement with Gemma 3 12B when long-context document ingestion is required (128K vs. Phi-4's 16K). Both fit in 16 GB simultaneously if system RAM is sufficient for context management.</p>
+  <p>GPT-OSS 20B at Q4 quantization (14 GB) fits within 16 GB VRAM with minimal headroom. Under the weighted scoring model, this outperforms Phi-4 14B on speed and matches it on scientific reasoning, making GPT-OSS 20B viable as a primary model even on 16 GB hardware. However, the tight VRAM margin limits concurrent context length. Supplement with Gemma 3 12B when 128K context is required for full-document ingestion.</p>
 
   <h3>Domain-specific fine-tuned alternatives</h3>
   <p>Several medically fine-tuned derivatives of the base models listed here are worth evaluating for clinical applications — notably Meditron (fine-tuned from Llama on medical literature), OpenBioLLM (biomedical domain adaptation), and BioMedLM. These are hosted on Hugging Face and loadable via Ollama. They typically sacrifice some general capability for stronger performance on clinical terminology, guideline recall, and medical reasoning. A separate assessment of these domain-specific variants is available on request.</p>
 
   <div class="callout">
     <div class="callout-label">Summary recommendation</div>
-    <p>For a clinician-researcher with a private practice: an RTX 4090 workstation running DeepSeek R1 32B and Qwen3 32B via Ollama provides the optimal balance of capability, privacy, and individual deployability as of March 2026. Total hardware investment is approximately $2,000–$2,500 for the GPU plus a mid-range workstation. All patient and research data remains local. No subscription costs. No rate limits.</p>
+    <p>For a clinician-researcher prioritizing scientific reasoning speed and accuracy: a workstation running <strong>GPT-OSS 20B</strong> via Ollama as the primary model provides the optimal balance of analytical throughput, inference speed, privacy, and individual deployability as of March 2026. Supplement with DeepSeek R1 32B for auditable chain-of-thought tasks. Total hardware investment begins at approximately $1,800 for GPT-OSS 20B on a budget build. All patient and research data remains local. No subscription costs. No rate limits.</p>
   </div>
 </section>
 
 <!-- Section 10: Hardware Build Examples -->
 <section class="section" id="hardware-builds">
-  <div class="section-eyebrow">09 &mdash; Practical examples</div>
-  <h2>Reference hardware builds for DeepSeek R1 32B</h2>
+  <div class="section-eyebrow">10 &mdash; Practical examples</div>
+  <h2>Reference hardware builds for GPT-OSS 20B</h2>
+  <p>GPT-OSS 20B's compact footprint (approximately 14 GB at Q4 quantization, 40 GB at FP16) opens a wider range of deployment options than the 32B models. The builds below are optimized specifically for GPT-OSS 20B, leveraging its speed advantage and smaller VRAM requirement to deliver the best possible inference throughput per dollar.</p>
   
-  <h3>The research workstation (premium)</h3>
-  <p><strong>Primary GPU:</strong> NVIDIA RTX 4090 24 GB | <strong>CPU:</strong> Intel i9-14900K or AMD Ryzen 9 9950X | <strong>System RAM:</strong> 64–128 GB DDR5 | <strong>Storage:</strong> 2 TB NVMe SSD | <strong>Power:</strong> 1200W 80+ Gold PSU</p>
-  <p>This configuration allows you to run DeepSeek R1 32B at full Q4 quantization (approximately 20 GB VRAM) with headroom for system processes and browser instances. The CPU is fast enough to handle tokenization without GPU blocking. Estimated total cost: $3,500–$4,200.</p>
-  
-  <h3>The budget workstation (solid)</h3>
-  <p><strong>Primary GPU:</strong> NVIDIA RTX 4080 Super 16 GB | <strong>CPU:</strong> Intel i7-14700 or AMD Ryzen 7 7700 | <strong>System RAM:</strong> 32 GB DDR5 | <strong>Storage:</strong> 1 TB NVMe SSD | <strong>Power:</strong> 850W 80+ Gold PSU</p>
-  <p>DeepSeek R1 32B will run at Q4 quantization with approximately 1–2 GB of margin. This is the minimum recommended tier for comfortable deployment. At lower quantization levels (Q3), you gain margin for simultaneous workloads, but sacrifice reasoning quality. Estimated total cost: $2,200–$2,800.</p>
+  <h3>Build A: Single GPU workstation (self-build, most economical)</h3>
+  <p><strong>Primary GPU:</strong> NVIDIA RTX 4070 Ti Super 16 GB | <strong>CPU:</strong> AMD Ryzen 7 7700X | <strong>System RAM:</strong> 32 GB DDR5-6000 | <strong>Storage:</strong> 1 TB NVMe SSD | <strong>Power:</strong> 750W 80+ Gold PSU</p>
+  <p>GPT-OSS 20B at Q4 quantization (14 GB) fits entirely within 16 GB VRAM with 2 GB of headroom for context management. This is the minimum viable single-GPU configuration. The 4070 Ti Super provides excellent price-to-performance for inference workloads. Because GPT-OSS 20B is smaller than DeepSeek R1 32B, you don't need to reach for a 24 GB card — saving $800–$1,200 over a 4090. Expected token throughput: 30–50 tokens/second. Estimated total cost: $1,800–$2,200.</p>
+
+  <h3>Build B: Dual GPU workstation (self-build, maximum capability)</h3>
+  <p><strong>GPUs:</strong> 2× NVIDIA RTX 3090 24 GB (used) with NVLink bridge | <strong>CPU:</strong> AMD Ryzen 7 7700X | <strong>System RAM:</strong> 64 GB DDR5-6000 | <strong>Storage:</strong> 2 TB NVMe SSD | <strong>Power:</strong> 1200W 80+ Gold PSU</p>
+  <p>With 48 GB total VRAM, this configuration can run GPT-OSS 20B at full FP16 precision (40 GB) — the highest quality inference tier, with no quantization loss. This is the only PC configuration under $5,000 that achieves FP16 deployment of a 20B model. The remaining 8 GB headroom allows extended context windows or a secondary lightweight model. For researchers who may later evaluate larger models, 48 GB also accommodates DeepSeek R1 32B at FP16 or 70B-class models at aggressive quantization. Expected token throughput: 35–55 tokens/second (FP16). Estimated total cost: $3,400–$4,000.</p>
+
+  <h3>Build C: Prebuilt workstation (Alienware Area-51, convenience)</h3>
+  <p><strong>System:</strong> Alienware Area-51 with RTX 5090 32 GB GDDR7 | <strong>CPU:</strong> Intel Core Ultra 9 285K (24-core) | <strong>System RAM:</strong> Stock 32 GB + aftermarket upgrade to 64 GB | <strong>Storage:</strong> 2 TB NVMe SSD (stock)</p>
+  <p>The RTX 5090's 32 GB GDDR7 provides ample headroom for GPT-OSS 20B at Q4 (14 GB used, 18 GB free) or even Q8 quantization for near-lossless inference quality. Blackwell architecture delivers approximately 2× the token throughput of the RTX 4070 Ti Super, making this the fastest single-GPU option available. The prebuilt eliminates assembly risk and includes a full Dell warranty. Expected token throughput: 60–90 tokens/second. Estimated total cost: $5,299 (including RAM upgrade).</p>
 
   <h3>The Mac alternative (unified memory)</h3>
-  <p><strong>System:</strong> Apple MacBook Pro M4 Max 128 GB | <strong>Accelerator:</strong> Metal (native, no GPU purchase required) | <strong>Storage:</strong> 1 TB SSD</p>
-  <p>The M4 Max's unified memory architecture eliminates the traditional VRAM bottleneck. DeepSeek R1 32B loads entirely into the memory pool and runs at native FP16 precision — a quality tier higher than Q4 quantization on NVIDIA cards with the same inference speed. The 128 GB variant is overkill for a single 32B model, but provides headroom for RAG systems and multi-model workflows. Estimated cost: $6,500 (laptop); favorable for clinicians who need portability.</p>
+  <p><strong>System:</strong> Apple MacBook Pro M4 Max 64 GB | <strong>Accelerator:</strong> Metal (native, no GPU purchase required) | <strong>Storage:</strong> 1 TB SSD</p>
+  <p>The M4 Max's unified memory architecture is ideally suited to GPT-OSS 20B. The model loads entirely into the 64 GB memory pool at full FP16 precision with 24 GB to spare — enough for RAG systems, a secondary model, or large context windows. Metal acceleration delivers 40–70 tok/s, competitive with or exceeding the RTX 4070 Ti Super. Estimated cost: $3,500 (laptop); favorable for researchers who need portability.</p>
 
   <h3>Installation &amp; usage</h3>
-  <p>All three configurations deploy identically via Ollama:</p>
+  <p>All four configurations deploy identically via Ollama:</p>
   <div class="platform-note">
     <span class="platform-icon">INSTALLATION</span>
     <p><code>curl -fsSL https://ollama.ai/install.sh | sh</code><br/>
-    <code>ollama pull deepseek-r1:32b</code></p>
+    <code>ollama pull gpt-oss:20b</code></p>
   </div>
-  <p>Once the model is pulled, interact with it via a CLI chat interface, integrate it into your application via the HTTP API (<code>localhost:11434</code>), or use third-party UI tools like Open WebUI or Lollms.</p>
+  <p>Once the model is pulled, interact with it via a CLI chat interface, integrate it into your application via the HTTP API (<code>localhost:11434</code>), or use third-party UI tools like Open WebUI or Lollms. GPT-OSS 20B supports low/medium/high reasoning modes via the Ollama <code>/api/generate</code> endpoint parameter <code>reasoning_effort</code>.</p>
 
   <h3>Performance expectations</h3>
-  <p><strong>Tokens per second:</strong> 40–80 tokens/s on a 4090; 25–45 tokens/s on a 4080 Super; 50–90 tokens/s on M4 Max (metal acceleration). <strong>Context window:</strong> 128K tokens (standard for DeepSeek R1 32B). <strong>Cost per query:</strong> $0.00 (all local; your electricity cost only).</p>
+  <p><strong>Tokens per second:</strong> 30–50 tok/s on a 4070 Ti Super (Q4); 35–55 tok/s on dual 3090s (FP16); 60–90 tok/s on RTX 5090; 40–70 tok/s on M4 Max (Metal). <strong>Context window:</strong> 128K tokens. <strong>Cost per query:</strong> $0.00 (all local; your electricity cost only).</p>
 </section>
 
 <!-- Section 11: Detailed Build Comparison -->
 <section class="section" id="build-comparison">
-  <div class="section-eyebrow">10 &mdash; Build cost analysis</div>
-  <h2>DeepSeek R1 32B deployment: Three build paths compared</h2>
-  <p>This section provides a detailed cost breakdown and capability comparison for three distinct approaches to deploying DeepSeek R1 32B locally: two custom self-builds optimized for cost and capability, and one pre-built system offering convenience at a premium. All pricing verified March 18, 2026.</p>
+  <div class="section-eyebrow">11 &mdash; Build cost analysis</div>
+  <h2>GPT-OSS 20B deployment: Three build paths compared</h2>
+  <p>This section provides a detailed cost breakdown and capability comparison for three distinct approaches to deploying GPT-OSS 20B locally: a single-GPU self-build optimized for cost, a dual-GPU self-build for maximum inference quality, and a pre-built system offering convenience and warranty. All pricing verified March 19, 2026.</p>
 
   <h3>The builds at a glance</h3>
   
   <div style="margin:2rem 0;padding:1.5rem;background:var(--accent-light);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;">
-    <p style="margin:0;font-size:.9rem;">⚠ <strong>Price correction — DDR5 RAM crisis:</strong> DDR5 RAM prices have surged over 400% since mid-2025 due to an AI-driven NAND supply shortage. A 64 GB DDR5-6000 kit that cost ~$200 in mid-2025 now runs $750–$900. All totals reflect verified March 2026 pricing. Earlier cost estimates significantly understated RAM costs.</p>
+    <p style="margin:0;font-size:.9rem;">⚠ <strong>Price correction — DDR5 RAM crisis:</strong> DDR5 RAM prices have surged over 400% since mid-2025 due to an AI-driven NAND supply shortage. A 64 GB DDR5-6000 kit that cost ~$200 in mid-2025 now runs $750–$900. A 32 GB kit runs $380–$450. All totals reflect verified March 2026 pricing.</p>
   </div>
 
-  <h3>Build A: Single GPU workstation (most economical)</h3>
-  <p><strong>GPU:</strong> 1× RTX 3090 24 GB (used) · <strong>CPU:</strong> Ryzen 7 7700X · <strong>RAM:</strong> 64 GB DDR5-6000 · <strong>Total cost:</strong> ~$2,515–$2,865</p>
-  <p>This is the lowest-cost entry point for DeepSeek R1 32B deployment. A single used RTX 3090 provides 24 GB VRAM, sufficient for Q4 quantization of the 32B model. The platform (AM5 + DDR5) allows future GPU upgrades without CPU/mobo replacement. Expected token throughput: 18–28 tokens/second.</p>
+  <div style="margin:2rem 0;padding:1.5rem;background:var(--green-light);border-left:3px solid var(--green);border-radius:0 6px 6px 0;">
+    <p style="margin:0;font-size:.9rem;">💡 <strong>GPT-OSS 20B advantage:</strong> Because GPT-OSS 20B requires only ~14 GB VRAM at Q4 quantization (vs. 20 GB for DeepSeek R1 32B), the entry-level build can use a 16 GB GPU instead of a 24 GB card — saving $800–$1,200 compared to DeepSeek-focused builds.</p>
+  </div>
+
+  <h3>Build A: Single GPU self-build (most economical)</h3>
+  <p><strong>GPU:</strong> 1× RTX 4070 Ti Super 16 GB (new) · <strong>CPU:</strong> Ryzen 7 7700X · <strong>RAM:</strong> 32 GB DDR5-6000 · <strong>Total cost:</strong> ~$1,800–$2,200</p>
+  <p>This is the lowest-cost entry point for GPT-OSS 20B deployment. The RTX 4070 Ti Super provides 16 GB VRAM — comfortably above the model's 14 GB Q4 requirement. Unlike builds targeting 32B models, you don't need a 24 GB card. The AM5 platform (Ryzen 7700X + B650 motherboard) allows future GPU upgrades without CPU/mobo replacement. 32 GB system RAM is sufficient for Q4 inference workloads. Expected token throughput: 30–50 tokens/second.</p>
   <ul style="margin:1rem 0 2rem 2rem;color:var(--ink-2);">
-    <li>✓ Best VRAM-per-dollar efficiency (~$38–$42 / GB)</li>
-    <li>✓ Comfortable performance for single-user clinical/research work</li>
-    <li>✓ Future upgrade path: swap GPU for RTX 4090 or newer without platform change</li>
-    <li>✗ Used GPU carries no warranty; requires careful vetting</li>
-    <li>✗ Cannot run 70B-class models (insufficient VRAM)</li>
+    <li>✓ Lowest total cost; $700+ cheaper than DeepSeek R1 32B builds</li>
+    <li>✓ New GPU with full manufacturer warranty</li>
+    <li>✓ 30–50 tok/s — fast enough for real-time interactive use</li>
+    <li>✓ Future upgrade path: swap GPU without platform change</li>
+    <li>✗ Cannot run GPT-OSS 20B at FP16 (requires 40 GB VRAM)</li>
+    <li>✗ Limited headroom for concurrent models or very large contexts</li>
     <li>✗ Self-assembly required; moderate technical complexity</li>
   </ul>
 
-  <h3>Build B: Dual GPU workstation (best capability per dollar)</h3>
-  <p><strong>GPU:</strong> 2× RTX 3090 24 GB (used) with NVLink bridge · <strong>CPU:</strong> Ryzen 7 7700X · <strong>RAM:</strong> 64 GB DDR5-6000 · <strong>Total cost:</strong> ~$3,455–$4,025</p>
-  <p>For ~$800–$1,100 more than Build A, you acquire 48 GB total VRAM (NVLink-connected), enabling deployment of 70B-parameter models at Q4 quantization and full-precision inference on 32B models. This is the strongest choice for researchers who anticipate experimentation beyond R1 32B. Expected token throughput: 25–38 tokens/second.</p>
+  <h3>Build B: Dual GPU self-build (best inference quality)</h3>
+  <p><strong>GPU:</strong> 2× RTX 3090 24 GB (used) with NVLink bridge · <strong>CPU:</strong> Ryzen 7 7700X · <strong>RAM:</strong> 64 GB DDR5-6000 · <strong>Total cost:</strong> ~$3,400–$4,000</p>
+  <p>With 48 GB total VRAM (NVLink-connected), this is the only PC configuration under $5,000 that runs GPT-OSS 20B at full FP16 precision (40 GB) — zero quantization loss. The remaining 8 GB accommodates extended context windows or a secondary model. For researchers who later evaluate larger models, 48 GB also supports DeepSeek R1 32B at FP16 or 70B-class models at aggressive quantization. Expected token throughput: 35–55 tokens/second (FP16).</p>
   <ul style="margin:1rem 0 2rem 2rem;color:var(--ink-2);">
-    <li>✓ 48 GB VRAM pool supports 70B models and full-precision 32B inference</li>
-    <li>✓ Comparable VRAM-per-dollar to Build A (~$36–$42 / GB)</li>
-    <li>✓ Faster inference than Build A (25–38 vs. 18–28 tok/s)</li>
+    <li>✓ FP16 lossless inference — highest quality available on consumer hardware</li>
+    <li>✓ 48 GB VRAM supports larger models for future experimentation</li>
+    <li>✓ Strong VRAM-per-dollar ratio (~$36–$42 / GB)</li>
     <li>✗ Higher sourcing risk: two used GPUs to vet from different sellers</li>
-    <li>✗ Complex assembly: NVLink bridge configuration, larger PSU/case required</li>
-    <li>✗ No warranty on either card</li>
+    <li>✗ Complex assembly: NVLink bridge, 1200W PSU, large case required</li>
+    <li>✗ No warranty on either GPU; ~700W power draw under load</li>
   </ul>
 
   <h3>Build C: Alienware Area-51 prebuilt (convenience and warranty)</h3>
   <p><strong>GPU:</strong> RTX 5090 32 GB GDDR7 (new) · <strong>CPU:</strong> Intel Core Ultra 9 285K (24-core) · <strong>RAM:</strong> Stock 32 GB + ~$300 aftermarket upgrade to 64 GB · <strong>Total cost:</strong> ~$5,299 (including RAM upgrade)</p>
-  <p>The RTX 5090 is a generation ahead (Blackwell architecture, 2025) and delivers approximately 2× the token throughput of either 3090-based build. This is currently the only practical retail avenue to acquire an RTX 5090 near MSRP. The prebuilt premium over Build A is now approximately $2,400–$2,800 when RAM costs are accurately accounted for. Expected token throughput: 45–65 tokens/second.</p>
+  <p>The RTX 5090's 32 GB GDDR7 provides massive headroom for GPT-OSS 20B — Q4 uses only 44% of available VRAM, and even Q8 near-lossless quantization fits with 10 GB to spare. Blackwell architecture delivers approximately 2× the throughput of Build A. Currently the only practical retail avenue to acquire an RTX 5090 near MSRP. Expected token throughput: 60–90 tokens/second.</p>
   <ul style="margin:1rem 0 2rem 2rem;color:var(--ink-2);">
-    <li>✓ Newest GPU architecture; 2× faster inference than Build A</li>
-    <li>✓ RTX 5090 access: currently unavailable in retail; prebuilt is the only avenue</li>
-    <li>✓ Full 1-year system warranty from Dell; zero assembly required</li>
-    <li>✓ Stock DDR5 is cheaper to upgrade than buying custom</li>
-    <li>✗ Highest total cost (~$2,400 premium over Build A)</li>
-    <li>✗ Poor VRAM-per-dollar ratio (~$166 / GB vs. ~$38–$42 for custom builds)</li>
+    <li>✓ Fastest inference: 60–90 tok/s, approximately 2× Build A</li>
+    <li>✓ 32 GB GDDR7 supports Q8 near-lossless with headroom to spare</li>
+    <li>✓ Full 1-year Dell warranty; zero assembly required</li>
+    <li>✓ RTX 5090 access: unavailable in retail; prebuilt is the only avenue</li>
+    <li>✗ Highest total cost (~$3,100 premium over Build A)</li>
+    <li>✗ Cannot run FP16 (requires 40 GB; 5090 has 32 GB)</li>
+    <li>✗ Proprietary case limits future component swaps</li>
   </ul>
 
   <h3>Cost breakdown comparison</h3>
@@ -1102,16 +1259,16 @@
     <thead>
       <tr style="border-bottom:1px solid var(--rule);">
         <th style="text-align:left;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Component</th>
-        <th style="text-align:right;padding:0.75rem;color:var(--accent);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build A</th>
-        <th style="text-align:right;padding:0.75rem;color:var(--accent-mid);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build B</th>
-        <th style="text-align:right;padding:0.75rem;color:var(--amber);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build C</th>
+        <th style="text-align:right;padding:0.75rem;color:var(--accent);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build A (1×GPU)</th>
+        <th style="text-align:right;padding:0.75rem;color:var(--accent-mid);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build B (2×GPU)</th>
+        <th style="text-align:right;padding:0.75rem;color:var(--amber);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build C (Prebuilt)</th>
       </tr>
     </thead>
     <tbody>
       <tr style="border-bottom:1px solid var(--rule);">
         <td style="padding:0.75rem;color:var(--ink-2);">GPU(s)</td>
-        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">$800–$1,000</td>
-        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">$1,600–$2,000</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">$750–$850 (new 4070 Ti S)</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">$1,600–$2,000 (used 3090s)</td>
         <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$3,500 (included)</td>
       </tr>
       <tr style="border-bottom:1px solid var(--rule);">
@@ -1121,45 +1278,89 @@
         <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">included</td>
       </tr>
       <tr style="border-bottom:1px solid var(--rule);">
-        <td style="padding:0.75rem;color:var(--ink-2);">64 GB DDR5 RAM <span style="color:var(--amber);font-size:.75rem;">▲ CRISIS</span></td>
-        <td style="text-align:right;padding:0.75rem;color:var(--amber);font-weight:500;">$750–$900</td>
-        <td style="text-align:right;padding:0.75rem;color:var(--amber);font-weight:500;">$750–$900</td>
-        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$300 (upgrade)</td>
+        <td style="padding:0.75rem;color:var(--ink-2);">RAM <span style="color:var(--amber);font-size:.75rem;">▲ CRISIS</span></td>
+        <td style="text-align:right;padding:0.75rem;color:var(--amber);font-weight:500;">$380–$450 (32 GB)</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--amber);font-weight:500;">$750–$900 (64 GB)</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$300 (upgrade to 64 GB)</td>
       </tr>
       <tr style="border-bottom:1px solid var(--rule);">
         <td style="padding:0.75rem;color:var(--ink-2);">Storage + PSU + Case + Cooler</td>
-        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$550</td>
-        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$715</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$365–$400</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$665–$715</td>
         <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">included</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);">NVLink bridge</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-3);">—</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-2);">~$60–$90</td>
+        <td style="text-align:right;padding:0.75rem;color:var(--ink-3);">—</td>
       </tr>
       <tr style="background:var(--accent-light);border:1px solid var(--accent);">
         <td style="padding:0.75rem;font-weight:600;color:var(--ink);">Total (verified Mar 2026)</td>
-        <td style="text-align:right;padding:0.75rem;font-weight:600;color:var(--accent);">~$2,515–$2,865</td>
-        <td style="text-align:right;padding:0.75rem;font-weight:600;color:var(--accent-mid);">~$3,455–$4,025</td>
+        <td style="text-align:right;padding:0.75rem;font-weight:600;color:var(--accent);">~$1,800–$2,200</td>
+        <td style="text-align:right;padding:0.75rem;font-weight:600;color:var(--accent-mid);">~$3,400–$4,000</td>
         <td style="text-align:right;padding:0.75rem;font-weight:600;color:var(--amber);">$5,299</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>GPT-OSS 20B quantization options per build</h3>
+  <table style="width:100%;border-collapse:collapse;margin:2rem 0;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <th style="text-align:left;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Quantization</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--ink-3);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">VRAM needed</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--accent);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build A (16 GB)</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--accent-mid);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build B (48 GB)</th>
+        <th style="text-align:center;padding:0.75rem;color:var(--amber);font-family:'DM Mono';font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;">Build C (32 GB)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);">Q4_K_M (standard)</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">~14 GB</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--green);font-weight:600;">✓ 2 GB free</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--green);font-weight:600;">✓ 34 GB free</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--green);font-weight:600;">✓ 18 GB free</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--rule);">
+        <td style="padding:0.75rem;color:var(--ink-2);">Q8_0 (near-lossless)</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">~22 GB</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--red);font-weight:600;">✗</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--green);font-weight:600;">✓ 26 GB free</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--green);font-weight:600;">✓ 10 GB free</td>
+      </tr>
+      <tr>
+        <td style="padding:0.75rem;color:var(--ink-2);">FP16 (lossless)</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--ink-2);">~40 GB</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--red);font-weight:600;">✗</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--green);font-weight:600;">✓ 8 GB free</td>
+        <td style="text-align:center;padding:0.75rem;color:var(--red);font-weight:600;">✗</td>
       </tr>
     </tbody>
   </table>
 
   <h3>Where to source components</h3>
   
-  <p><strong>GPU (used RTX 3090):</strong> eBay ($800–$1,000 with verified seller ratings), Reddit r/hardwareswap ($750–$950, trader flair), or Facebook Marketplace ($700–$900 with local pickup inspection).</p>
+  <p><strong>GPU — RTX 4070 Ti Super (Build A):</strong> Amazon ($749–$849), Newegg ($739–$829, often with bundle discounts), or Micro Center ($729.99 in-store). MSI, ASUS TUF, and Gigabyte Gaming OC are the most commonly available SKUs at competitive pricing.</p>
   
-  <p><strong>CPU (Ryzen 7 7700X):</strong> Micro Center ($229.99, in-store), Amazon ($245–$265, watch for price dips via CamelCamelCamel alerts), or Newegg (especially CPU + motherboard bundles, which often discount by $30–$60).</p>
+  <p><strong>GPU — used RTX 3090 (Build B):</strong> eBay ($800–$1,000 with verified seller ratings), Reddit r/hardwareswap ($750–$950, trader flair), or Facebook Marketplace ($700–$900 with local pickup inspection). Test both cards individually before NVLink configuration.</p>
   
-  <p><strong>RAM (64 GB DDR5-6000):</strong> <strong>Volatile pricing — verify immediately before purchase.</strong> Amazon ($750–$850, set price alerts) or Newegg bundle deals (often $100–$200 cheaper when bundled with CPU/mobo). G.Skill Flare X5 and Crucial Pro are the most commonly competitive models.</p>
+  <p><strong>CPU (Ryzen 7 7700X):</strong> Micro Center ($229.99, in-store), Amazon ($245–$265, watch for price dips via CamelCamelCamel alerts), or Newegg CPU+mobo bundles ($30–$60 discount).</p>
   
-  <p><strong>Storage/PSU/Case/Cooler:</strong> Amazon for most components; Newegg occasionally offers 5–10% bundle discounts. WD Black SN850X 2 TB NVMe runs ~$200; Corsair RM1000x PSU ~$155; Fractal Define R5 case ~$120; be quiet! Dark Rock 4 cooler ~$75.</p>
+  <p><strong>RAM:</strong> <strong>Volatile pricing — verify immediately before purchase.</strong> Build A: 32 GB DDR5-6000 ($380–$450). Build B: 64 GB DDR5-6000 ($750–$900). Set price alerts on Amazon; Newegg bundle deals are often $100–$200 cheaper when bundled with CPU/mobo.</p>
   
-  <p><strong>NVLink bridge (Build B only):</strong> eBay, search "NVIDIA NVLink 3-slot RTX 3090" (~$60–$90). Verify slot pitch and cooler clearance compatibility with your cards before ordering.</p>
+  <p><strong>Storage/PSU/Case/Cooler (Build A):</strong> WD Black SN850X 1 TB NVMe ~$110; Corsair RM750x PSU ~$95; Fractal Pop Air case ~$85; be quiet! Dark Rock 4 cooler ~$75. Total ~$365–$400.</p>
   
-  <p><strong>Alienware Area-51 (Build C):</strong> Dell.com or Alienware.com ($4,999 direct). Purchase the RTX 5090 system directly from Dell for warranty. Buy a separate 2×32 GB DDR5-5600 kit on Amazon (~$300) rather than through Dell's configure-to-order (which typically overcharges 40–60% for memory upgrades).</p>
+  <p><strong>Storage/PSU/Case/Cooler (Build B):</strong> WD Black SN850X 2 TB ~$200; Corsair RM1200x PSU ~$185; Fractal Define R5 case ~$120; Noctua NH-D15 ~$100; NVLink bridge ~$60–$90 (eBay). Total ~$665–$715.</p>
+  
+  <p><strong>Alienware Area-51 (Build C):</strong> Dell.com or Alienware.com ($4,999 direct). Buy a separate 2×32 GB DDR5-5600 kit on Amazon (~$300) for the RAM upgrade rather than through Dell's configure-to-order (which overcharges 40–60% for memory).</p>
 
   <h3>Final recommendation</h3>
   
   <div class="callout">
     <div class="callout-label">Which build?</div>
-    <p><strong>Build A</strong> if your budget is fixed and R1 32B is sufficient for your use case. <strong>Build B</strong> if you anticipate evaluating 70B-class models or want full-precision FP16 inference (which provides slightly higher quality than Q4 quantization). <strong>Build C</strong> if you need the fastest possible inference and cannot absorb setup time or hardware sourcing risk — and if you value a warranty on the entire system.</p>
+    <p><strong>Build A</strong> if you want the most economical path to fast GPT-OSS 20B inference — Q4 quantization is excellent for daily research and clinical use, and the new GPU carries a full warranty. This is the recommended starting point. <strong>Build B</strong> if FP16 lossless inference quality matters for your work or you anticipate evaluating larger models — the dual 3090 setup is the best value path to 48 GB VRAM. <strong>Build C</strong> if you need maximum inference speed, cannot absorb assembly time or hardware sourcing risk, and value a complete system warranty.</p>
   </div>
 
 </section>
@@ -1175,7 +1376,7 @@
     </div>
     <div class="footer-mono">
       <div>Open-Source LLM Report</div>
-      <div>March 2026 &middot; v1.0</div>
+      <div>March 2026 &middot; v2.0</div>
     </div>
   </div>
 </footer>
