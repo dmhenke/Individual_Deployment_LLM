@@ -627,7 +627,6 @@
   <a href="index.html" class="home-link">← Home</a>
   <div class="toc-inner">
     <a href="#context" class="toc-link">Context</a>
-    <a href="#platforms" class="toc-link">Platforms</a>
     <a href="#hardware" class="toc-link">Hardware</a>
     <a href="#models-24" class="toc-link">24 GB tier</a>
     <a href="#models-16" class="toc-link">16 GB tier</a>
@@ -655,41 +654,9 @@
   </div>
 </section>
 
-<!-- Section 2: Platform clarification -->
-<section class="section" id="platforms">
-  <div class="section-eyebrow">02 &mdash; Terminology</div>
-  <h2>Hugging Face &amp; Ollama are not models</h2>
-  <p>A common point of confusion: Hugging Face and Ollama are <strong>distribution and deployment platforms</strong>, not model families. Every model in this report is, in the precise sense, a Hugging Face model — the weights are hosted there. And every model is deployable via Ollama, which was the recommended runtime throughout.</p>
-
-  <div class="two-col">
-    <div class="platform-card">
-      <h4>Hugging Face</h4>
-      <div class="role">Repository / hosting platform</div>
-      <p>Analogous to GitHub for machine learning. All major open-weight models publish their weights here. You download from Hugging Face; you do not run models "on" Hugging Face unless using their Inference API.</p>
-    </div>
-    <div class="platform-card">
-      <h4>Ollama</h4>
-      <div class="role">Local inference runtime</div>
-      <p>Handles model download, quantization selection, GPU offloading, and serves an OpenAI-compatible API locally. Three terminal commands suffice: install, pull, run. Does not develop its own models.</p>
-    </div>
-    <div class="platform-card">
-      <h4>LM Studio</h4>
-      <div class="role">GUI-based runtime (macOS / Windows)</div>
-      <p>A graphical front-end for running GGUF models locally. Preferred for users who want a chat interface without configuring a terminal. Pulls models from Hugging Face directly.</p>
-    </div>
-    <div class="platform-card">
-      <h4>llama.cpp / vLLM</h4>
-      <div class="role">Inference backends</div>
-      <p>Lower-level inference engines. llama.cpp powers Ollama under the hood. vLLM is preferred for production multi-user deployments with higher throughput requirements.</p>
-    </div>
-  </div>
-
-  <p>The relationship is linear: model creators (Alibaba, Microsoft, Google, DeepSeek, Meta, OpenAI) publish weights to Hugging Face, which are then fetched and served by Ollama or LM Studio on your local hardware.</p>
-</section>
-
 <!-- Section 3: Hardware -->
 <section class="section" id="hardware">
-  <div class="section-eyebrow">03 &mdash; Infrastructure</div>
+  <div class="section-eyebrow">02 &mdash; Infrastructure</div>
   <h2>Hardware requirements</h2>
   <p>VRAM is the hard constraint. All figures below assume Q4_K_M quantization, which compresses model weights to 4-bit precision and reduces memory requirements by approximately 75% relative to FP16, with benchmark degradation typically under 3 points on general tasks. Performance degrades significantly when models are forced to offload layers to system RAM — a drop from 40 tokens/sec to 8 tokens/sec has been measured on the same model when only partial VRAM fit is achieved.</p>
 
@@ -766,8 +733,7 @@
 
 <!-- Section 4: Models 24 GB -->
 <section class="section" id="models-24">
-  <div class="section-eyebrow">04 &mdash; Recommended models</div>
-  <h2>24 GB VRAM tier</h2>
+  <div class="section-eyebrow">03 &mdash; Premium tier (24 GB)</div>
   <p>The RTX 4090 or 3090 (24 GB) represents the practical ceiling for individual deployment. At this level, 32B parameter models run comfortably at Q4_K_M, and the 20B class can run at higher precision. This tier offers near-frontier performance for research and clinical tasks.</p>
 
   <div class="model-grid">
@@ -834,8 +800,7 @@
 
 <!-- Section 5: Models 16 GB -->
 <section class="section" id="models-16">
-  <div class="section-eyebrow">05 &mdash; Recommended models</div>
-  <h2>16 GB VRAM tier</h2>
+  <div class="section-eyebrow">04 &mdash; Mainstream tier (16 GB)</div>
   <p>The RTX 4070 Ti Super (16 GB) or RTX 4080 is the mainstream professional GPU sweet spot. At this level, 12–14B parameter models run fully in VRAM with room for extended contexts. Performance is genuinely useful for research tasks; the gap with the 24 GB tier is most apparent on multi-step analytical chains.</p>
 
   <div class="model-grid">
@@ -902,8 +867,7 @@
 
 <!-- Section 6: Models 8 GB -->
 <section class="section" id="models-8">
-  <div class="section-eyebrow">06 &mdash; Recommended models</div>
-  <h2>8 GB VRAM tier</h2>
+  <div class="section-eyebrow">05 &mdash; Budget tier (8 GB)</div>
   <p>Entry-level consumer GPUs and laptop GPUs. Capability is meaningfully constrained at this tier — model quality is sufficient for focused, well-scoped queries, but complex multi-step reasoning or long-document analysis is better deferred to a higher-tier machine. Useful as a local assistant on a travel laptop while a more capable desktop handles heavier workloads.</p>
 
   <div class="model-grid">
@@ -951,7 +915,7 @@
 
 <!-- Section 7: Benchmarks -->
 <section class="section" id="benchmarks">
-  <div class="section-eyebrow">07 &mdash; Performance data</div>
+  <div class="section-eyebrow">06 &mdash; Performance data</div>
   <h2>Benchmark comparison</h2>
   <p>Scores below are drawn from published benchmark results as of February–March 2026. All figures are from the Artificial Analysis Intelligence Index, SWE-bench Verified, and AIME 2025 leaderboards. Individual-deployable models are highlighted; excluded enterprise models are shown for reference only.</p>
 
@@ -994,7 +958,7 @@
 
 <!-- Section 8: Excluded -->
 <section class="section" id="excluded">
-  <div class="section-eyebrow">08 &mdash; Scope decisions</div>
+  <div class="section-eyebrow">07 &mdash; Scope decisions</div>
   <h2>Models excluded for individual deployment</h2>
   <p>The following models were assessed in the full enterprise survey but excluded here on the basis of hardware, infrastructure, or licensing constraints incompatible with individual operation.</p>
 
@@ -1028,7 +992,7 @@
 
 <!-- Section 9: Guidance -->
 <section class="section" id="guidance">
-  <div class="section-eyebrow">09 &mdash; Recommendation</div>
+  <div class="section-eyebrow">08 &mdash; Recommendation</div>
   <h2>Deployment guidance</h2>
 
   <h3>For a 24 GB GPU workstation (RTX 4090 / 3090)</h3>
@@ -1056,7 +1020,7 @@
 
 <!-- Section 10: Hardware Build Examples -->
 <section class="section" id="hardware-builds">
-  <div class="section-eyebrow">10 &mdash; Practical examples</div>
+  <div class="section-eyebrow">09 &mdash; Practical examples</div>
   <h2>Reference hardware builds for DeepSeek R1 32B</h2>
   
   <h3>The research workstation (premium)</h3>
@@ -1086,7 +1050,7 @@
 
 <!-- Section 11: Detailed Build Comparison -->
 <section class="section" id="build-comparison">
-  <div class="section-eyebrow">11 &mdash; Build cost analysis</div>
+  <div class="section-eyebrow">10 &mdash; Build cost analysis</div>
   <h2>DeepSeek R1 32B deployment: Three build paths compared</h2>
   <p>This section provides a detailed cost breakdown and capability comparison for three distinct approaches to deploying DeepSeek R1 32B locally: two custom self-builds optimized for cost and capability, and one pre-built system offering convenience at a premium. All pricing verified March 18, 2026.</p>
 
